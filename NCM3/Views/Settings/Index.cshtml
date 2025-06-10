@@ -1,0 +1,196 @@
+@model NCM3.Models.SettingsViewModel
+@{
+    ViewData["Title"] = "Cài đặt hệ thống";
+}
+
+<div class="container-fluid my-4">
+    <h1>Cài đặt hệ thống</h1>
+    
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" role="alert">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Thiết lập thông báo</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="SaveNotificationSettings" method="post">
+                        <div class="form-group mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enableTelegram" asp-for="NotificationSettings.EnableTelegram">
+                                <label class="form-check-label" for="enableTelegram">Bật thông báo Telegram</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label asp-for="NotificationSettings.TelegramBotToken">Telegram Bot Token</label>
+                            <input type="text" class="form-control" asp-for="NotificationSettings.TelegramBotToken">
+                            <small class="form-text text-muted">Token nhận từ BotFather</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label asp-for="NotificationSettings.TelegramChatId">Telegram Chat ID</label>
+                            <input type="text" class="form-control" asp-for="NotificationSettings.TelegramChatId">
+                            <small class="form-text text-muted">ID của chat hoặc nhóm chat nhận thông báo</small>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="form-group mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enableWebhook" asp-for="NotificationSettings.EnableWebhook">
+                                <label class="form-check-label" for="enableWebhook">Bật webhook API</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label asp-for="NotificationSettings.WebhookUrl">URL Webhook</label>
+                            <input type="url" class="form-control" asp-for="NotificationSettings.WebhookUrl">
+                            <small class="form-text text-muted">URL API để nhận thông báo dưới dạng JSON</small>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="form-group mb-3">
+                            <label>Loại thông báo</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="notifyOnConfigChange" asp-for="NotificationSettings.NotifyOnConfigChange">
+                                <label class="form-check-label" for="notifyOnConfigChange">Thông báo khi thay đổi cấu hình</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notifyOnComplianceIssue" asp-for="NotificationSettings.NotifyOnComplianceIssue">
+                                <label class="form-check-label" for="notifyOnComplianceIssue">Thông báo khi phát hiện vấn đề tuân thủ</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notifyOnConnectivityChange" asp-for="NotificationSettings.NotifyOnConnectivityChange">
+                                <label class="form-check-label" for="notifyOnConnectivityChange">Thông báo khi trạng thái kết nối thay đổi</label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Lưu thiết lập</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Thiết lập tự động phát hiện thay đổi</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Settings" asp-action="SaveAutoDetectionSettings" method="post">
+                        <div class="form-group mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enableAutoDetection" asp-for="AutoDetectionSettings.EnableAutoDetection">
+                                <label class="form-check-label" for="enableAutoDetection">Bật tự động phát hiện thay đổi</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label asp-for="AutoDetectionSettings.CheckIntervalMinutes">Khoảng thời gian kiểm tra (phút)</label>
+                            <input type="number" class="form-control" asp-for="AutoDetectionSettings.CheckIntervalMinutes" min="5" max="1440">
+                            <small class="form-text text-muted">Thời gian giữa các lần kiểm tra (từ 5 phút đến 24 giờ)</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label>Kiểu phát hiện</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="detectConfigChanges" asp-for="AutoDetectionSettings.DetectConfigChanges">
+                                <label class="form-check-label" for="detectConfigChanges">Phát hiện thay đổi cấu hình</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="detectConnectivityChanges" asp-for="AutoDetectionSettings.DetectConnectivityChanges">
+                                <label class="form-check-label" for="detectConnectivityChanges">Phát hiện thay đổi kết nối</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="detectComplianceIssues" asp-for="AutoDetectionSettings.DetectComplianceIssues">
+                                <label class="form-check-label" for="detectComplianceIssues">Phát hiện vấn đề tuân thủ</label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Lưu thiết lập</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Kiểm tra kết nối Telegram</h5>
+                </div>
+                <div class="card-body">
+                    <p>Gửi tin nhắn kiểm tra đến Telegram để xác nhận cấu hình đã chính xác.</p>
+                    <form asp-action="TestTelegramConnection" method="post">
+                        <button type="submit" class="btn btn-info">Gửi tin nhắn kiểm tra</button>
+                    </form>
+                    
+                    @if (TempData["TestResult"] != null)
+                    {
+                        <div class="alert @(TempData["TestSuccessful"] != null && (bool)TempData["TestSuccessful"] ? "alert-success" : "alert-danger") mt-3">
+                            @TempData["TestResult"]
+                        </div>
+                    }
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5>Trạng thái dịch vụ</h5>
+                </div>                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Tự động phát hiện thay đổi
+                            @if (Model.DetectionServiceRunning)
+                            {
+                                <span class="badge bg-success">Đang chạy</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Đã dừng</span>
+                            }
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Thông báo Telegram
+                            @if (Model.TelegramEnabled)
+                            {
+                                <span class="badge bg-success">Đã cấu hình</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Chưa cấu hình</span>
+                            }
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Webhook API
+                            @if (Model.NotificationSettings.EnableWebhook && !string.IsNullOrEmpty(Model.NotificationSettings.WebhookUrl))
+                            {
+                                <span class="badge bg-success">Đã cấu hình</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Chưa cấu hình</span>
+                            }
+                        </li>
+                    </ul>
+                    
+                    <a href="@Url.Action("NotificationHistory")" class="btn btn-outline-primary w-100 mt-3">
+                        <i class="fas fa-history"></i> Xem lịch sử thông báo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

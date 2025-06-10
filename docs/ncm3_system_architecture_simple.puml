@@ -1,0 +1,92 @@
+@startuml NCM3_System_Architecture
+title NCM3 Network Configuration Management System Architecture
+
+' Định nghĩa các thành phần
+actor "User" as user
+rectangle "Frontend" {
+  [Web Browser] as browser
+  [Bootstrap UI] as ui
+  [jQuery/JS] as js
+}
+
+rectangle "Backend (ASP.NET Core)" {
+  [MVC Controllers] as controllers
+  [Router Service] as routerService
+  [Config Service] as configService
+  [S3 Backup Service] as s3Service
+  [SNMP Service] as snmpService
+  [Notification Helper] as notifService
+  [Entity Framework] as ef
+}
+
+database "SQLite" as sqlite {
+  [Routers] as routers
+  [Configurations] as configs
+  [ComplianceRules] as rules
+  [RouterGroups] as groups
+}
+
+cloud "AWS S3" as s3
+rectangle "Network Devices" as devices {
+  [Cisco Routers] as cisco
+}
+rectangle "Notifications" {
+  [Telegram Bot] as telegram
+}
+
+' Kết nối giữa các thành phần
+user -> browser : Access
+browser -> ui : HTTP/HTTPS
+ui -> js : DOM Events
+js -> controllers : AJAX Calls
+
+controllers -> routerService : Use
+controllers -> configService : Use
+controllers -> s3Service : Use
+
+routerService -> ef : Data Access
+configService -> ef : Data Access
+s3Service -> ef : Data Access
+notifService -> telegram : Send Alerts
+
+ef -> sqlite : Store/Query
+s3Service -> s3 : Backup Configs
+
+snmpService -> devices : Poll (SNMP)
+routerService -> devices : Configure (SSH/Telnet)
+
+configService -> notifService : Send Change Alerts
+routerService -> configService : Trigger Config Check
+
+' Ghi chú
+note right of controllers
+  HomeController
+  RoutersController
+  ConfigManagementController
+  SettingsController
+  RestoreController
+end note
+
+note right of sqlite
+  Stores router information,
+  configurations, compliance rules,
+  backup jobs, and router groups
+end note
+
+note right of s3
+  Stores router configurations
+  with versioning support
+end note
+
+note right of telegram
+  Real-time notifications
+  for config changes and
+  compliance violations
+end note
+
+note right of devices
+  Network devices
+  monitored and managed
+  via SNMP and SSH/Telnet
+end note
+@enduml

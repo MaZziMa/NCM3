@@ -1,0 +1,71 @@
+@model NCM3.Models.ConfigTemplate
+
+@{
+    ViewData["Title"] = "Tạo Template Mới";
+}
+
+<div class="container-fluid">
+    <h1>Tạo Template Mới</h1>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <a asp-action="Templates" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Quay lại Danh sách
+            </a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Thông tin Template</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="CreateTemplate">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="DeviceType" class="form-label"></label>
+                            <input asp-for="DeviceType" class="form-control" placeholder="Ví dụ: Cisco ASR 1000, Các Router Cisco..." />
+                            <span asp-validation-for="DeviceType" class="text-danger"></span>
+                            <div class="form-text">Loại thiết bị áp dụng template. Để trống nếu áp dụng cho tất cả.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Content" class="form-label"></label>
+                    <textarea asp-for="Content" class="form-control code-editor" rows="15" style="font-family: monospace;"></textarea>
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+                
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Lưu Template
+                    </button>
+                    <a asp-action="Templates" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "So sánh Cấu hình";
+    var router = ViewBag.Router as NCM3.Models.Router;
+    var configs = ViewBag.ConfigList as SelectList;
+}
+
+<div class="container-fluid">
+    <h1>So sánh Cấu hình</h1>
+    <h4>@router.Hostname (@router.IpAddress)</h4>    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <a asp-controller="Routers" asp-action="Details" asp-route-id="@router.Id" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại Router
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Chọn phiên bản cấu hình để so sánh</h5>
+        </div>
+        <div class="card-body">
+            @if (configs != null && configs.Count() >= 2)
+            {
+                <form asp-action="Compare" method="post">
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label class="form-label">Cấu hình 1</label>
+                                <select name="configId1" class="form-select">
+                                    @foreach (var item in configs)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center d-flex align-items-center justify-content-center">
+                            <span class="fs-4">VS</span>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label class="form-label">Cấu hình 2</label>
+                                <select name="configId2" class="form-select">
+                                    @foreach (var item in configs)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-arrow-left-right"></i> So sánh Cấu hình
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Cần ít nhất 2 bản sao lưu cấu hình để thực hiện so sánh.
+                </div>
+                <p>
+                    <a asp-controller="Routers" asp-action="BackupConfiguration" asp-route-id="@router.Id" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Tạo bản sao lưu mới
+                    </a>
+                </p>
+            }
+        </div>
+    </div>
+</div> 

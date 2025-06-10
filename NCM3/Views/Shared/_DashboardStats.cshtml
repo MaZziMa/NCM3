@@ -1,0 +1,102 @@
+@model NCM3.Models.ViewModels.DashboardViewModel
+
+<div class="row">
+    <!-- Device Status Card -->
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-primary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title text-primary">Network Devices</h5>
+                        <h2 class="mb-0">@Model.TotalRouters</h2>
+                        <div class="small text-muted mt-2">
+                            <span class="text-success">@Model.ConnectedRouters Online</span> | 
+                            <span class="text-danger">@Model.DisconnectedRouters Offline</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-icon text-primary">
+                        <i class="bi bi-router"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Status Card -->
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title text-success">Backup Status</h5>
+                        <h2 class="mb-0">@Model.TotalBackups</h2>
+                        <div class="small text-muted mt-2">
+                            <span>@Model.BackupsLast24Hours in 24h</span> | 
+                            <span>@Model.BackupsLast7Days in 7d</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-icon text-success">
+                        <i class="bi bi-cloud-upload"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance Status Card -->
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card @(Model.CriticalComplianceIssues > 0 ? "border-danger" : "border-success") h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title @(Model.CriticalComplianceIssues > 0 ? "text-danger" : "text-success")">Compliance</h5>
+                        <h2 class="mb-0">@Model.TotalComplianceIssues</h2>
+                        <div class="small text-muted mt-2">
+                            @if(Model.CriticalComplianceIssues > 0)
+                            {
+                                <span class="text-danger">@Model.CriticalComplianceIssues Critical Issues</span>
+                            }
+                            else
+                            {
+                                <span class="text-success">No Critical Issues</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="dashboard-icon @(Model.CriticalComplianceIssues > 0 ? "text-danger" : "text-success")">
+                        <i class="bi @(Model.CriticalComplianceIssues > 0 ? "bi-exclamation-triangle" : "bi-check-circle")"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Last Backup Card -->
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card border-info h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title text-info">Last Backup</h5>
+                        @if (Model.LastBackupTime.HasValue)
+                        {
+                            <h6 class="mb-0">@Model.LastBackupTime.Value.ToString("yyyy-MM-dd HH:mm")</h6>
+                            <div class="small text-muted mt-2">
+                                @((DateTime.UtcNow - Model.LastBackupTime.Value).TotalHours.ToString("F1")) hours ago
+                            </div>
+                        }
+                        else
+                        {
+                            <h6 class="mb-0">No backups</h6>
+                            <div class="small text-muted mt-2">
+                                Create your first backup
+                            </div>
+                        }
+                    </div>
+                    <div class="dashboard-icon text-info">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

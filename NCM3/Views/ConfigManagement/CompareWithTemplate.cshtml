@@ -1,0 +1,140 @@
+@model DiffPlex.DiffBuilder.Model.SideBySideDiffModel
+@{
+    ViewData["Title"] = "So sánh với Template";
+    var config = ViewBag.Config as NCM3.Models.RouterConfiguration;
+    var template = ViewBag.Template as NCM3.Models.ConfigTemplate;
+}
+
+<div class="container-fluid">
+    <h1>So sánh Cấu hình với Template</h1>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <a asp-controller="Routers" asp-action="ConfigurationHistory" asp-route-id="@config.RouterId" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại Lịch sử Cấu hình
+                </a>
+                <a asp-action="CompareWithTemplateSelection" asp-route-configId="@config.Id" class="btn btn-primary">
+                    <i class="bi bi-arrow-left-right"></i> So sánh với Template Khác
+                </a>
+                <a asp-action="UnifiedCompareWithTemplate" asp-route-configId="@config.Id" asp-route-templateId="@template.Id" class="btn btn-info">
+                    <i class="bi bi-list"></i> Xem Kiểu Đơn
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Thông tin So sánh</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="m-0">Template</h6>
+                        </div>
+                        <div class="card-body">
+                            <div><strong>Tên:</strong> @template.Name</div>
+                            <div><strong>Phiên bản:</strong> @template.Version</div>
+                            <div><strong>Loại thiết bị:</strong> @(string.IsNullOrEmpty(template.DeviceType) ? "Tất cả" : template.DeviceType)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="m-0">Cấu hình Router</h6>
+                        </div>
+                        <div class="card-body">
+                            <div><strong>Router:</strong> @config.Router?.Hostname</div>
+                            <div><strong>Phiên bản:</strong> @config.Version</div>
+                            <div><strong>Ngày sao lưu:</strong> @config.BackupDate.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>Kết quả So sánh</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-end mb-2">
+                <div class="badge bg-danger me-2">Thiếu so với Template</div>
+                <div class="badge bg-success">Thêm so với Template</div>
+            </div>
+            
+            <div class="row diff-container">
+                <div class="col-md-6">
+                    <div class="diff-header bg-primary text-white py-1 px-2">Template</div>
+                    <div class="diff-content">
+                        <table class="table table-sm table-bordered">
+                            <tbody>
+                                @for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                                {
+                                    var line = Model.OldText.Lines[i];
+                                    <tr class="@(line.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted ? "diff-deleted" : "")">
+                                        <td class="line-number">@line.Position</td>
+                                        <td class="line-content">@Html.Raw(line.Text.Replace(" ", "&nbsp;"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="diff-header bg-success text-white py-1 px-2">Cấu hình Router</div>
+                    <div class="diff-content">
+                        <table class="table table-sm table-bordered">
+                            <tbody>
+                                @for (int i = 0; i < Model.NewText.Lines.Count; i++)
+                                {
+                                    var line = Model.NewText.Lines[i];
+                                    <tr class="@(line.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted ? "diff-added" : "")">
+                                        <td class="line-number">@line.Position</td>
+                                        <td class="line-content">@Html.Raw(line.Text.Replace(" ", "&nbsp;"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .diff-container {
+        font-family: Consolas, Monaco, 'Courier New', monospace;
+        font-size: 14px;
+    }
+    
+    .diff-content {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .line-number {
+        width: 50px;
+        text-align: right;
+        color: #666;
+        background-color: #f8f9fa;
+    }
+    
+    .line-content {
+        white-space: pre;
+    }
+    
+    .diff-deleted {
+        background-color: #f8d7da;
+    }
+    
+    .diff-added {
+        background-color: #d4edda;
+    }
+</style> 

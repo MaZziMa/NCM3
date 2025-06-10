@@ -1,0 +1,260 @@
+@model NCM3.Models.Router
+
+@{
+    ViewData["Title"] = "Router Details";
+}
+
+<div class="container-fluid">
+    <h1>Router Details</h1>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <a asp-action="TestConnection" asp-route-id="@Model.Id" class="btn btn-success">
+                    <i class="bi bi-speedometer2"></i> Test Connection
+                </a>
+                <a asp-action="BackupConfiguration" asp-route-id="@Model.Id" class="btn btn-info">
+                    <i class="bi bi-download"></i> Backup Configuration
+                </a>
+                <a asp-action="ConfigurationHistory" asp-route-id="@Model.Id" class="btn btn-secondary">
+                    <i class="bi bi-clock-history"></i> Configuration History
+                </a>                <a asp-action="DebugSsh" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="bi bi-bug"></i> Debug SSH
+                </a>
+                <button id="testSnmpBtn" data-ip="@Model.IpAddress" class="btn btn-info">
+                    <i class="bi bi-diagram-3"></i> Test SNMP
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5>Router Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">
+                            @Html.DisplayNameFor(model => model.Hostname)
+                        </div>
+                        <div class="col-md-8">
+                            <strong>@Html.DisplayFor(model => model.Hostname)</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">
+                            @Html.DisplayNameFor(model => model.IpAddress)
+                        </div>
+                        <div class="col-md-8">
+                            @Html.DisplayFor(model => model.IpAddress)
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">
+                            @Html.DisplayNameFor(model => model.Model)
+                        </div>
+                        <div class="col-md-8">
+                            @if (string.IsNullOrEmpty(Model.Model))
+                            {
+                                <span class="text-muted">Unknown</span>
+                            }
+                            else
+                            {
+                                @Html.DisplayFor(model => model.Model)
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">
+                            @Html.DisplayNameFor(model => model.OSVersion)
+                        </div>
+                        <div class="col-md-8">
+                            @if (string.IsNullOrEmpty(Model.OSVersion))
+                            {
+                                <span class="text-muted">Unknown</span>
+                            }
+                            else
+                            {
+                                @Html.DisplayFor(model => model.OSVersion)
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">
+                            @Html.DisplayNameFor(model => model.LastBackup)
+                        </div>
+                        <div class="col-md-8">
+                            @if (Model.LastBackup.HasValue)
+                            {
+                                @Model.LastBackup.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                            }
+                            else
+                            {
+                                <span class="text-muted">Never</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-3">                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Status</h5>
+                        <div>
+                            @if (Model.Status == "Connected")
+                            {
+                                <span class="badge bg-success fs-6">@Model.Status</span>
+                            }
+                            else if (Model.Status == "Error")
+                            {
+                                <span class="badge bg-danger fs-6">@Model.Status</span>
+                            }
+                            else if (Model.Status == "Disconnected")
+                            {
+                                <span class="badge bg-warning text-dark fs-6">@Model.Status</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary fs-6">@Model.Status</span>
+                            }
+                            
+                            @if (Model.IsAvailable)
+                            {
+                                <span class="badge bg-success ms-2"><i class="bi bi-wifi"></i> Available</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger ms-2"><i class="bi bi-wifi-off"></i> Unavailable</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <i class="bi bi-info-circle"></i>
+                        Test the connection to retrieve the latest information about this router.
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb"></i>
+                        Click on "Test Connection" to check connectivity and retrieve router information.
+                    </div>
+                </div>
+            </div>
+        </div>    </div>
+</div>
+
+<!-- SNMP Test Result Modal -->
+<div class="modal fade" id="snmpTestModal" tabindex="-1" aria-labelledby="snmpTestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="snmpTestModalLabel">SNMP Test Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="snmpLoading" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Testing SNMP connectivity...</p>
+                </div>
+                <div id="snmpResults" class="d-none">
+                    <div id="snmpSuccess" class="alert alert-success d-none">
+                        <i class="bi bi-check-circle-fill"></i> <span id="snmpSuccessMessage"></span>
+                    </div>
+                    <div id="snmpError" class="alert alert-danger d-none">
+                        <i class="bi bi-exclamation-triangle-fill"></i> <span id="snmpErrorMessage"></span>
+                    </div>
+                    <div id="sysDescrContainer" class="card mt-3 d-none">
+                        <div class="card-header">System Description</div>
+                        <div class="card-body">
+                            <pre id="sysDescrContent" class="mb-0"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // SNMP Test button click handler
+            $("#testSnmpBtn").click(function() {
+                const ipAddress = $(this).data("ip");
+                
+                // Reset and show modal
+                resetSnmpTestModal();
+                $("#snmpTestModal").modal("show");
+                
+                // Make AJAX call to test SNMP credentials
+                $.ajax({
+                    url: "/api/SNMPTest",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ ipAddress: ipAddress }),
+                    success: function(response) {
+                        // Hide loading indicator
+                        $("#snmpLoading").addClass("d-none");
+                        $("#snmpResults").removeClass("d-none");
+                        
+                        // Show success message
+                        $("#snmpSuccess").removeClass("d-none");
+                        $("#snmpSuccessMessage").text(response.message);
+                        
+                        // Display system description if available
+                        if (response.sysDescr) {
+                            $("#sysDescrContainer").removeClass("d-none");
+                            $("#sysDescrContent").text(response.sysDescr);
+                        }
+                    },
+                    error: function(xhr) {
+                        // Hide loading indicator
+                        $("#snmpLoading").addClass("d-none");
+                        $("#snmpResults").removeClass("d-none");
+                        
+                        // Show error message
+                        $("#snmpError").removeClass("d-none");
+                        
+                        let errorMsg = "Failed to test SNMP credentials";
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        $("#snmpErrorMessage").text(errorMsg);
+                    }
+                });
+            });
+            
+            // Function to reset the SNMP test modal
+            function resetSnmpTestModal() {
+                $("#snmpLoading").removeClass("d-none");
+                $("#snmpResults").addClass("d-none");
+                $("#snmpSuccess").addClass("d-none");
+                $("#snmpError").addClass("d-none");
+                $("#sysDescrContainer").addClass("d-none");
+                $("#snmpSuccessMessage").text("");
+                $("#snmpErrorMessage").text("");
+                $("#sysDescrContent").text("");
+            }
+        });
+    </script>
+}

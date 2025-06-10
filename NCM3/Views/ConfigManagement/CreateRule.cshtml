@@ -1,0 +1,107 @@
+@model NCM3.Models.ComplianceRule
+
+@{
+    ViewData["Title"] = "Tạo quy tắc tuân thủ";
+}
+
+<div class="container-fluid">
+    <h1>Tạo quy tắc tuân thủ</h1>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <a asp-action="ComplianceRules" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Thông tin quy tắc</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="CreateRule">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="DeviceType" class="form-label"></label>
+                            <input asp-for="DeviceType" class="form-control" placeholder="Ví dụ: Cisco ASR 1000, Các Router Cisco..." />
+                            <span asp-validation-for="DeviceType" class="text-danger"></span>
+                            <div class="form-text">Loại thiết bị áp dụng quy tắc. Để trống nếu áp dụng cho tất cả.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Severity" class="form-label"></label>
+                            <select asp-for="Severity" class="form-select">
+                                <option value="High">Cao (High)</option>
+                                <option value="Medium">Trung bình (Medium)</option>
+                                <option value="Low">Thấp (Low)</option>
+                            </select>
+                            <span asp-validation-for="Severity" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="ExpectedResult" class="form-label"></label>
+                            <div class="form-check">
+                                <input asp-for="ExpectedResult" class="form-check-input" />
+                                <label class="form-check-label" for="ExpectedResult">
+                                    Có (chọn nếu cấu hình phải có mẫu này)
+                                </label>
+                                <div class="form-text">Chọn nếu mong đợi tìm thấy mẫu này trong cấu hình, bỏ chọn nếu không được phép có mẫu này.</div>
+                            </div>
+                            <span asp-validation-for="ExpectedResult" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Pattern" class="form-label"></label>
+                    <textarea asp-for="Pattern" class="form-control code-editor" rows="5" style="font-family: monospace;"></textarea>
+                    <span asp-validation-for="Pattern" class="text-danger"></span>
+                    <div class="form-text">
+                        Nhập biểu thức chính quy (regex) hoặc chuỗi văn bản cần kiểm tra. Ví dụ: <code>^password encryption$</code>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Notes" class="form-label"></label>
+                    <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Notes" class="text-danger"></span>
+                </div>
+                
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Lưu quy tắc
+                    </button>
+                    <a asp-action="ComplianceRules" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

@@ -1,0 +1,155 @@
+@startuml NCM3_System_Architecture
+!define RECTANGLE class
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam class {
+    BackgroundColor #E8F4FD
+    BorderColor #0066CC
+    FontSize 10
+}
+skinparam package {
+    BackgroundColor #F0F8FF
+    BorderColor #4A90E2
+    FontSize 12
+}
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #0066CC
+}
+
+title NCM3 Network Configuration Management System Architecture
+
+package "Frontend Layer" {
+    [Web Browser] as browser
+    [Bootstrap UI] as ui
+    [jQuery/JavaScript] as js
+}
+
+package "Presentation Layer" {
+    [MVC Controllers] as controllers
+    [Views (Razor)] as views
+    [Middleware] as middleware
+    [Global Exception Handler] as exceptionHandler
+}
+
+package "Business Logic Layer" {
+    [Router Service] as routerService
+    [Config Management Service] as configService
+    [Notification Helper] as notificationService
+    [Encryption Service] as encryptionService
+    [S3 Backup Service] as s3Service
+    [SNMP Service] as snmpService
+    [Telegram Notification Service] as telegramService
+    [Router Connection Service] as connectionService
+}
+
+package "Data Access Layer" {
+    [Entity Framework Core] as ef
+    [Data Models] as models
+    [Database Context] as dbContext
+}
+
+package "Data Storage" {
+    database "SQLite Database" as sqlite {
+        [Routers] as routersTable
+        [Router Configurations] as configTable
+        [Compliance Rules] as complianceTable
+        [Backup Jobs] as backupTable
+        [Router Groups] as groupsTable
+    }
+    
+    cloud "AWS S3" as s3 {
+        [Configuration Backups] as s3backups
+    }
+    
+    folder "Local Storage" as localStorage {
+        [Log Files] as logs
+        [Config Templates] as templates
+    }
+}
+
+package "External Integrations" {
+    [Telegram Bot API] as telegram
+    [SNMP Protocol] as snmp
+    [SSH/Telnet] as ssh
+}
+
+package "Network Devices" {
+    [Cisco Routers] as cisco
+    [Other Network Devices] as otherDevices
+}
+
+' Frontend connections
+browser -->> ui : HTTP/HTTPS
+ui ||--|| js : DOM Manipulation
+browser ||--|| controllers : HTTP Requests
+
+' Presentation layer connections
+controllers ||--|| views : Render Views
+controllers ||--|| middleware : Request Pipeline
+middleware ||--|| exceptionHandler : Exception Handling
+controllers ||--|| routerService : Router Operations
+
+' Controller-service connections
+controllers ||--|| configService : Config Management
+controllers ||--|| notificationService : Notifications
+controllers ||--|| s3Service : Backup Operations
+controllers ||--|| encryptionService : Credential Protection
+
+' Business logic connections
+routerService ||--|| encryptionService : Password Encryption/Decryption
+routerService ||--|| snmpService : Device Communication
+routerService ||--|| connectionService : Router Connectivity
+routerService ||--|| sshnet : SSH Communication
+configService ||--|| notificationService : Change Alerts
+configService ||--|| telegramService : Send Notifications
+configService ||--|| s3Service : Backup Configs
+notificationService ||--|| telegramService : Alert Delivery
+s3Service ||--|| awssdk : S3 API Calls
+
+' Data access connections
+routerService ||--|| ef : Data Operations
+configService ||--|| ef : Config CRUD
+s3Service ||--|| ef : Backup Metadata
+ef ||--|| models : Object Mapping
+ef ||--|| dbContext : Database Context
+
+' Database connections
+dbContext ||--|| sqlite : SQLite Connection
+sqlite ||--|| routersTable
+sqlite ||--|| configTable
+sqlite ||--|| complianceTable
+sqlite ||--|| backupTable
+sqlite ||--|| groupsTable
+
+' External storage
+s3Service ||--|| s3 : Configuration Storage
+configService ||--|| localStorage : File Operations
+notificationService ||--|| logs : Logging
+
+' External integrations
+telegramService ||--|| telegram : Bot Messages
+snmpService ||--|| snmp : SNMP Protocol
+routerService ||--|| ssh : SSH/Telnet
+
+' Network devices
+snmp ||--|| cisco : SNMP Queries
+ssh ||--|| cisco : Configuration Management
+snmp ||--|| otherDevices : Monitoring
+ssh ||--|| otherDevices : Configuration Management
+
+note top of controllers : "ASP.NET Core MVC\n- HomeController\n- RoutersController\n- ConfigManagementController\n- SettingsController\n- RestoreController\n- SNMPTestController"
+
+note top of routerService : "Core Services\n- Router CRUD\n- Password Encryption\n- SSH/Telnet Communication\n- Connectivity Check\n- Config Backup\n- Compliance Validation"
+
+note top of encryptionService : "AES-256 Encryption\n- Credential Protection\n- Secure Storage"
+
+note top of sqlite : "Data Models\n- Router\n- RouterConfiguration\n- ComplianceRule\n- BackupJob\n- RouterGroup"
+
+note top of s3 : "AWS S3 Storage\n- Configuration Backups\n- Versioned Storage\n- Encrypted Transit"
+
+note top of telegramService : "Notification Channels\n- Telegram Bot\n- Real-time Alerts\n- Change Notifications"
+
+note top of cisco : "Supported Devices\n- Cisco Routers\n- SNMP v2c/v3\n- SSH/Telnet Access"
+
+@enduml

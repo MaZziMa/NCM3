@@ -1,0 +1,279 @@
+@model DiffPlex.DiffBuilder.Model.SideBySideDiffModel
+@{
+    ViewData["Title"] = "Kết quả So sánh";
+    var config1 = ViewBag.Config1 as NCM3.Models.RouterConfiguration;
+    var config2 = ViewBag.Config2 as NCM3.Models.RouterConfiguration;
+    var fullConfig1 = ViewBag.FullConfig1 as string;
+    var fullConfig2 = ViewBag.FullConfig2 as string;
+}
+
+<div class="container-fluid">
+    <h1>Kết quả So sánh Cấu hình</h1>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <a asp-controller="Routers" asp-action="ConfigurationHistory" asp-route-id="@(config1?.RouterId ?? 0)" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại Lịch sử Cấu hình
+                </a>
+                <a asp-action="CompareSelection" asp-route-routerId="@(config1?.RouterId ?? 0)" class="btn btn-primary">
+                    <i class="bi bi-arrow-left-right"></i> So sánh Cấu hình Khác
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Thông tin So sánh</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="m-0">Phiên bản Cũ</h6>
+                        </div>
+                        <div class="card-body">
+                            <div><strong>Router:</strong> @config1?.Router?.Hostname</div>
+                            <div><strong>Phiên bản:</strong> @config1?.Version</div>
+                            <div><strong>Ngày sao lưu:</strong> @(config1?.BackupDate.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="m-0">Phiên bản Mới</h6>
+                        </div>
+                        <div class="card-body">
+                            <div><strong>Router:</strong> @config2?.Router?.Hostname</div>
+                            <div><strong>Phiên bản:</strong> @config2?.Version</div>
+                            <div><strong>Ngày sao lưu:</strong> @(config2?.BackupDate.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Kết quả So sánh</h5>
+            <div>
+                <div class="btn-group view-mode-toggle" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="diff-only-btn">
+                        <i class="bi bi-intersect"></i> Chỉ Hiện Khác Biệt
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary active" id="full-diff-btn">
+                        <i class="bi bi-file-text"></i> Hiện Toàn Bộ Với Khác Biệt
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-end mb-2">
+                <div class="badge bg-danger me-2">Dòng đã xóa</div>
+                <div class="badge bg-success">Dòng đã thêm</div>
+            </div>
+            
+            @if (Model == null || Model.OldText == null || Model.OldText.Lines == null || Model.NewText == null || Model.NewText.Lines == null)
+            {
+                <div class="alert alert-warning">
+                    Không có dữ liệu để hiển thị hoặc dữ liệu không đầy đủ.
+                </div>
+            }
+            else
+            {
+                <!-- Chế độ chỉ hiện khác biệt -->
+                <div id="diff-only-mode" class="diff-container" style="display: none;">
+                    <table class="table table-sm table-bordered">
+                        <tbody>
+                            @{
+                                int contextLines = 3; // Số dòng hiển thị trước và sau mỗi thay đổi
+                                List<bool> isDisplayed = new List<bool>();
+                                
+                                for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                                {
+                                    isDisplayed.Add(false);
+                                }
+                                
+                                // Đánh dấu các dòng cần hiển thị (thay đổi và ngữ cảnh)
+                                for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                                {
+                                    var oldLine = Model.OldText.Lines[i];
+                                    var newLine = (i < Model.NewText.Lines.Count) ? Model.NewText.Lines[i] : null;
+                                    
+                                    if ((oldLine != null && oldLine.Type != DiffPlex.DiffBuilder.Model.ChangeType.Unchanged) || 
+                                        (newLine != null && newLine.Type != DiffPlex.DiffBuilder.Model.ChangeType.Unchanged))
+                                    {
+                                        // Hiển thị dòng thay đổi và các dòng ngữ cảnh
+                                        for (int j = Math.Max(0, i - contextLines); j <= Math.Min(Model.OldText.Lines.Count - 1, i + contextLines); j++)
+                                        {
+                                            isDisplayed[j] = true;
+                                        }
+                                    }
+                                }
+                                
+                                // Hiển thị các dòng được đánh dấu
+                                bool prevDisplayed = false;
+                                for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                                {
+                                    if (isDisplayed[i])
+                                    {
+                                        // Thêm dấu ... nếu có dòng bị ẩn
+                                        if (i > 0 && !prevDisplayed)
+                                        {
+                                            <tr>
+                                                <td class="line-number"></td>
+                                                <td class="line-content text-muted">...</td>
+                                            </tr>
+                                        }
+                                        
+                                        var oldLine = Model.OldText.Lines[i];
+                                        var newLine = (i < Model.NewText.Lines.Count) ? Model.NewText.Lines[i] : null;
+                                        
+                                        if (oldLine != null && oldLine.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted)
+                                        {
+                                            <tr class="diff-deleted">
+                                                <td class="line-number">@(oldLine.Position.HasValue ? oldLine.Position.Value.ToString() : "")</td>
+                                                <td class="line-content">- @Html.Raw((oldLine.Text ?? string.Empty).Replace(" ", "&nbsp;"))</td>
+                                            </tr>
+                                        }
+                                        else if (newLine != null && newLine.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted)
+                                        {
+                                            <tr class="diff-added">
+                                                <td class="line-number">@(newLine.Position.HasValue ? newLine.Position.Value.ToString() : "")</td>
+                                                <td class="line-content">+ @Html.Raw((newLine.Text ?? string.Empty).Replace(" ", "&nbsp;"))</td>
+                                            </tr>
+                                        }
+                                        else if (oldLine != null)
+                                        {
+                                            <tr>
+                                                <td class="line-number">@(oldLine.Position.HasValue ? oldLine.Position.Value.ToString() : "")</td>
+                                                <td class="line-content">  @Html.Raw((oldLine.Text ?? string.Empty).Replace(" ", "&nbsp;"))</td>
+                                            </tr>
+                                        }
+                                        
+                                        prevDisplayed = true;
+                                    }
+                                    else
+                                    {
+                                        prevDisplayed = false;
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Chế độ hiện toàn bộ với các thay đổi được đánh dấu -->
+                <div id="full-diff-mode" class="diff-container">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="diff-header bg-primary text-white py-1 px-2">Phiên bản Cũ</div>
+                            <div class="diff-content">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        @for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                                        {
+                                            var line = Model.OldText.Lines[i];
+                                            if (line != null)
+                                            {
+                                                <tr class="@(line.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted ? "diff-deleted" : "")">
+                                                    <td class="line-number">@(line.Position.HasValue ? line.Position.Value.ToString() : "")</td>
+                                                    <td class="line-content">@Html.Raw((line.Text ?? string.Empty).Replace(" ", "&nbsp;"))</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="diff-header bg-success text-white py-1 px-2">Phiên bản Mới</div>
+                            <div class="diff-content">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        @for (int i = 0; i < Model.NewText.Lines.Count; i++)
+                                        {
+                                            var line = Model.NewText.Lines[i];
+                                            if (line != null)
+                                            {
+                                                <tr class="@(line.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted ? "diff-added" : "")">
+                                                    <td class="line-number">@(line.Position.HasValue ? line.Position.Value.ToString() : "")</td>
+                                                    <td class="line-content">@Html.Raw((line.Text ?? string.Empty).Replace(" ", "&nbsp;"))</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .diff-container {
+        font-family: Consolas, Monaco, 'Courier New', monospace;
+        font-size: 14px;
+    }
+    
+    .diff-content {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .line-number {
+        width: 50px;
+        text-align: right;
+        color: #666;
+        background-color: #f8f9fa;
+    }
+    
+    .line-content {
+        white-space: pre;
+    }
+    
+    .diff-deleted {
+        background-color: #f8d7da;
+    }
+    
+    .diff-added {
+        background-color: #d4edda;
+    }
+    
+    #diff-only-mode {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const diffOnlyBtn = document.getElementById('diff-only-btn');
+            const fullDiffBtn = document.getElementById('full-diff-btn');
+            const diffOnlyMode = document.getElementById('diff-only-mode');
+            const fullDiffMode = document.getElementById('full-diff-mode');
+            
+            diffOnlyBtn.addEventListener('click', function() {
+                diffOnlyMode.style.display = 'block';
+                fullDiffMode.style.display = 'none';
+                diffOnlyBtn.classList.add('active');
+                fullDiffBtn.classList.remove('active');
+            });
+            
+            fullDiffBtn.addEventListener('click', function() {
+                diffOnlyMode.style.display = 'none';
+                fullDiffMode.style.display = 'block';
+                diffOnlyBtn.classList.remove('active');
+                fullDiffBtn.classList.add('active');
+            });
+        });
+    </script>
+}

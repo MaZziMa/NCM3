@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\NCM3.props" />
+</Project>

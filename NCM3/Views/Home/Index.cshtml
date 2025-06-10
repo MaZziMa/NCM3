@@ -1,0 +1,463 @@
+﻿@model NCM3.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <style>
+        .stats-card {
+            transition: all 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .bg-info-light {
+            background-color: #e3f2fd;
+        }
+        .bg-success-light {
+            background-color: #e8f5e9;
+        }
+        .bg-warning-light {
+            background-color: #fff8e1;
+        }
+        .bg-danger-light {
+            background-color: #ffebee;
+        }
+        .dashboard-icon {
+            font-size: 2.5rem;
+            opacity: 0.7;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+    </style>
+}
+
+<div class="container">
+    <partial name="_AlertMessages" />
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">System Dashboard</h1>
+        <div>
+            <a asp-controller="Routers" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-router"></i> View All Devices
+            </a>
+            <button id="refreshDashboard" class="btn btn-sm btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>    <!-- Quick Actions Row -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-controller="Routers" asp-action="Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add New Device
+                        </a>
+                        <a asp-controller="ConfigManagement" asp-action="Templates" class="btn btn-info text-white">
+                            <i class="bi bi-file-earmark-text"></i> Manage Templates
+                        </a>
+                        <a asp-controller="ConfigManagement" asp-action="ComplianceRules" class="btn btn-warning">
+                            <i class="bi bi-shield-check"></i> Manage Rules
+                        </a>
+                        <a asp-controller="Settings" asp-action="NotificationHistory" class="btn btn-secondary">
+                            <i class="bi bi-bell"></i> View Alerts
+                        </a>
+                        <a asp-controller="ConfigManagement" asp-action="Search" class="btn btn-success">
+                            <i class="bi bi-search"></i> Search Configs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Cards Row -->
+    <partial name="_DashboardStats" model="Model" />
+
+    <!-- Charts And Tables Row -->
+    <div class="row">
+        <!-- Recent Configuration Changes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Recent Configuration Changes</h5>
+                        <a asp-controller="Routers" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                            View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Device</th>
+                                    <th>Backup Date</th>
+                                    <th>Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.RecentConfigurations.Any())
+                                {
+                                    foreach (var config in Model.RecentConfigurations)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a asp-controller="Routers" asp-action="Details" asp-route-id="@config.RouterId">
+                                                    @config.RouterHostname
+                                                </a>
+                                            </td>
+                                            <td>@config.BackupDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>@config.BackupType</td>
+                                            <td>
+                                                <a asp-controller="Routers" asp-action="ViewConfiguration" asp-route-id="@config.Id" 
+                                                   class="btn btn-sm btn-outline-secondary" title="View">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center">No configuration changes yet</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Alerts -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-bell"></i> Latest Alerts</h5>
+                        <a asp-controller="Settings" asp-action="NotificationHistory" class="btn btn-sm btn-outline-primary">
+                            View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Device</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.RecentNotifications.Any())
+                                {
+                                    foreach (var notification in Model.RecentNotifications)
+                                    {
+                                        string badgeClass = notification.Success ? "bg-success" : "bg-danger";
+                                        
+                                        <tr>
+                                            <td>
+                                                <span class="badge @badgeClass">@notification.Type</span>
+                                            </td>
+                                            <td>@notification.Router</td>
+                                            <td>@notification.Status</td>
+                                            <td>@notification.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center">No alerts</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Devices Without Recent Backup -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-exclamation-circle"></i> Devices Without Recent Backup</h5>
+                        <a asp-controller="Routers" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                            View All Devices
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Device</th>
+                                    <th>IP Address</th>
+                                    <th>Last Backup</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.RoutersWithoutRecentBackup.Any())
+                                {
+                                    foreach (var router in Model.RoutersWithoutRecentBackup)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a asp-controller="Routers" asp-action="Details" asp-route-id="@router.Id">
+                                                    @router.Hostname
+                                                </a>
+                                            </td>
+                                            <td>@router.IpAddress</td>
+                                            <td>
+                                                @if (router.LastBackup.HasValue)
+                                                {
+                                                    <span class="text-warning">@router.LastBackup.Value.ToString("yyyy-MM-dd HH:mm")</span>
+                                                    <br>
+                                                    <small>@router.DaysSinceLastBackup days ago</small>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger">Never</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a asp-controller="Routers" asp-action="BackupConfiguration" asp-route-id="@router.Id" 
+                                                   class="btn btn-sm btn-outline-primary" title="Backup Now">
+                                                    <i class="bi bi-cloud-upload"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center">All devices have recent backups</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>        <!-- Device Status Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Device Status Overview</h5>
+                </div>
+                <div class="card-body d-flex justify-content-center">
+                    <div class="chart-container">
+                        <canvas id="deviceStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Health Overview -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-activity"></i> System Health Overview</h5>
+                        <a asp-controller="Settings" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                            System Settings
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <tbody>
+                                <!-- Device Backup Status -->
+                                <tr>
+                                    <td width="25%"><i class="bi bi-cloud-upload"></i> Device Backup Status</td>
+                                    <td width="60%">
+                                        @{
+                                            var backupPercentage = Model.TotalRouters > 0 
+                                                ? 100 - (Model.RoutersWithoutRecentBackup.Count * 100 / Model.TotalRouters) 
+                                                : 0;
+                                            var backupClass = backupPercentage > 90 ? "bg-success" : (backupPercentage > 70 ? "bg-warning" : "bg-danger");
+                                        }
+                                        <div class="progress">
+                                            <div class="progress-bar @backupClass" role="progressbar" style="width: @backupPercentage%;" 
+                                                aria-valuenow="@backupPercentage" aria-valuemin="0" aria-valuemax="100">@backupPercentage%</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (Model.RoutersWithoutRecentBackup.Any())
+                                        {
+                                            <span class="text-warning">@Model.RoutersWithoutRecentBackup.Count devices need backup</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success">All devices backed up</span>
+                                        }
+                                    </td>
+                                </tr>
+                                
+                                <!-- Compliance Status -->
+                                <tr>
+                                    <td><i class="bi bi-shield-check"></i> Compliance Status</td>
+                                    <td>
+                                        @{
+                                            var complianceIssuesClass = Model.CriticalComplianceIssues > 0 ? "bg-danger" : (Model.TotalComplianceIssues > 0 ? "bg-warning" : "bg-success");
+                                            var compliancePercentage = Model.TotalComplianceIssues > 0 ? 100 - (Model.CriticalComplianceIssues * 100 / Model.TotalComplianceIssues) : 100;
+                                        }
+                                        <div class="progress">
+                                            <div class="progress-bar @complianceIssuesClass" role="progressbar" style="width: @compliancePercentage%;" 
+                                                aria-valuenow="@compliancePercentage" aria-valuemin="0" aria-valuemax="100">@compliancePercentage%</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (Model.CriticalComplianceIssues > 0)
+                                        {
+                                            <span class="text-danger">@Model.CriticalComplianceIssues critical issues</span>
+                                        }
+                                        else if (Model.TotalComplianceIssues > 0)
+                                        {
+                                            <span class="text-warning">@Model.TotalComplianceIssues minor issues</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success">No compliance issues</span>
+                                        }
+                                    </td>
+                                </tr>
+                                
+                                <!-- Device Connectivity -->
+                                <tr>
+                                    <td><i class="bi bi-reception-4"></i> Device Connectivity</td>
+                                    <td>
+                                        @{
+                                            var connectivityPercentage = Model.TotalRouters > 0 
+                                                ? Model.ConnectedRouters * 100 / Model.TotalRouters 
+                                                : 0;
+                                            var connectivityClass = connectivityPercentage > 90 ? "bg-success" : (connectivityPercentage > 70 ? "bg-warning" : "bg-danger");
+                                        }
+                                        <div class="progress">
+                                            <div class="progress-bar @connectivityClass" role="progressbar" style="width: @connectivityPercentage%;" 
+                                                aria-valuenow="@connectivityPercentage" aria-valuemin="0" aria-valuemax="100">@connectivityPercentage%</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (Model.DisconnectedRouters > 0)
+                                        {
+                                            <span class="text-danger">@Model.DisconnectedRouters devices offline</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success">All devices online</span>
+                                        }
+                                    </td>
+                                </tr>
+                                
+                                <!-- Last System Activity -->
+                                <tr>
+                                    <td><i class="bi bi-clock-history"></i> Last System Activity</td>
+                                    <td colspan="2">
+                                        @if (Model.LastBackupTime.HasValue)
+                                        {
+                                            <span>Configuration backup at @Model.LastBackupTime.Value.ToString("yyyy-MM-dd HH:mm:ss") (@((DateTime.UtcNow - Model.LastBackupTime.Value).TotalHours.ToString("F1")) hours ago)</span>
+                                        }
+                                        else if (Model.RecentNotifications.Any())
+                                        {
+                                            var lastNotification = Model.RecentNotifications.FirstOrDefault();
+                                            <span>@lastNotification.Type notification at @lastNotification.Timestamp.ToString("yyyy-MM-dd HH:mm:ss") (@((DateTime.UtcNow - lastNotification.Timestamp).TotalHours.ToString("F1")) hours ago)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No recent activity</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    <script>
+        // Initialize device status chart
+        const deviceStatusCtx = document.getElementById('deviceStatusChart').getContext('2d');
+        const deviceStatusChart = new Chart(deviceStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Online', 'Offline'],
+                datasets: [{
+                    data: [@Model.ConnectedRouters, @Model.DisconnectedRouters],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.7)', // Green
+                        'rgba(220, 53, 69, 0.7)'  // Red
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });        // Refresh dashboard when button is clicked
+        document.getElementById('refreshDashboard').addEventListener('click', function() {
+            location.reload();
+        });
+        
+        // Initialize progress bars
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgressBars();
+            
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                document.querySelectorAll('.alert').forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+}

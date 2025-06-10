@@ -1,0 +1,88 @@
+```mermaid
+graph TD
+    %% Định nghĩa tiêu đề
+    title[NCM3 Network Configuration Management System Architecture]
+    style title fill:#f9f,stroke:#333,stroke-width:2px
+    
+    %% Định nghĩa nhóm Frontend
+    subgraph Frontend["Frontend"]
+        browser["Web Browser"]
+        ui["Bootstrap UI"]
+        js["jQuery/JS"]
+    end
+    
+    %% Định nghĩa nhóm Backend
+    subgraph Backend["Backend (ASP.NET Core)"]
+        controllers["MVC Controllers"]
+        routerService["Router Service"]
+        configService["Config Service"]
+        s3Service["S3 Backup Service"]
+        snmpService["SNMP Service"]
+        notifService["Notification Helper"]
+        ef["Entity Framework"]
+    end
+    
+    %% Định nghĩa cơ sở dữ liệu
+    subgraph Database["SQLite Database"]
+        routers["Routers"]
+        configs["Configurations"]
+        rules["ComplianceRules"]
+        groups["RouterGroups"]
+    end
+    
+    %% Định nghĩa các thành phần khác
+    s3["AWS S3"]
+    subgraph Devices["Network Devices"]
+        cisco["Cisco Routers"]
+        otherDevices["Other Network Devices"]
+    end
+    
+    telegram["Telegram Bot"]
+    user["User"]
+    
+    %% Kết nối giữa các thành phần
+    user -->|"Access"| browser
+    browser -->|"HTTP/HTTPS"| ui
+    ui -->|"DOM Events"| js
+    js -->|"AJAX Calls"| controllers
+    
+    controllers --> routerService
+    controllers --> configService
+    controllers --> s3Service
+    
+    routerService --> ef
+    configService --> ef
+    s3Service --> ef
+    
+    ef --> Database
+    s3Service -->|"Backup Configs"| s3
+    
+    snmpService -->|"Poll (SNMP)"| Devices
+    routerService -->|"Configure (SSH/Telnet)"| Devices
+    
+    configService --> notifService
+    notifService -->|"Send Alerts"| telegram
+    
+    %% Ghi chú
+    classDef note fill:#ffffcc,stroke:#999,stroke-width:1px
+    
+    controllerNote["HomeController<br>RoutersController<br>ConfigManagementController<br>SettingsController<br>RestoreController"]
+    class controllerNote note
+    controllers --- controllerNote
+    
+    dbNote["Stores router information,<br>configurations, compliance rules,<br>backup jobs, and router groups"]
+    class dbNote note
+    Database --- dbNote
+    
+    s3Note["Stores router configurations<br>with versioning support"]
+    class s3Note note
+    s3 --- s3Note
+    
+    telegramNote["Real-time notifications<br>for config changes and<br>compliance violations"]
+    class telegramNote note
+    telegram --- telegramNote
+    
+    devicesNote["Network devices<br>monitored and managed<br>via SNMP and SSH/Telnet"]
+    class devicesNote note
+    Devices --- devicesNote
+```

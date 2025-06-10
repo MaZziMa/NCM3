@@ -1,0 +1,85 @@
+@{
+    ViewData["Title"] = "Tìm kiếm Cấu hình";
+    var routers = ViewBag.Routers as SelectList;
+}
+
+<div class="container-fluid">
+    <h1>Tìm kiếm Cấu hình</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Tìm kiếm Nội dung trong Cấu hình</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 
+                Nhập từ khóa hoặc biểu thức chính quy (regex) để tìm kiếm trong tất cả các bản sao lưu cấu hình.
+            </div>
+            
+            <form asp-action="SearchResults" method="post">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label for="searchTerm" class="form-label">Từ khóa tìm kiếm</label>
+                            <input type="text" id="searchTerm" name="searchTerm" class="form-control" placeholder="VD: interface GigabitEthernet|access-list" required />
+                            <div class="form-text">Hỗ trợ regex. Sử dụng '|' để tìm nhiều từ khóa.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="routerId" class="form-label">Router (không bắt buộc)</label>
+                            <select id="routerId" name="routerId" class="form-select">
+                                <option value="">-- Tất cả Router --</option>
+                                @if (routers != null)
+                                {
+                                    foreach (var item in routers)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Tìm kiếm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Mẹo tìm kiếm</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h6>Ví dụ Regex Hữu ích</h6>
+                        <ul>
+                            <li><code>password.*</code> - Tìm dòng có chứa "password" và bất kỳ ký tự nào phía sau</li>
+                            <li><code>interface (GigabitEthernet|FastEthernet)</code> - Tìm các dòng interface</li>
+                            <li><code>ip address \d+\.\d+\.\d+\.\d+</code> - Tìm địa chỉ IP</li>
+                            <li><code>^no</code> - Tìm dòng bắt đầu bằng "no"</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h6>Tìm kiếm Nâng cao</h6>
+                        <ul>
+                            <li>Sử dụng <code>.*</code> để đại diện cho nhiều ký tự</li>
+                            <li>Sử dụng <code>\d</code> để đại diện cho các chữ số</li>
+                            <li>Sử dụng <code>^</code> để tìm từ đầu dòng</li>
+                            <li>Sử dụng <code>$</code> để tìm từ cuối dòng</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

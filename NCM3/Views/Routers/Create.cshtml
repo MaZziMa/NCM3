@@ -1,0 +1,75 @@
+@model NCM3.Models.Router
+
+@{
+    ViewData["Title"] = "Add Router";
+}
+
+<div class="container-fluid">
+    <h1>Add New Router</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Router Details</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Hostname" class="form-label"></label>
+                            <input asp-for="Hostname" class="form-control" placeholder="e.g., Router-Core-01" />
+                            <span asp-validation-for="Hostname" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="IpAddress" class="form-label"></label>
+                            <input asp-for="IpAddress" class="form-control" placeholder="e.g., 192.168.1.1" />
+                            <span asp-validation-for="IpAddress" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" placeholder="SSH username" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" placeholder="SSH password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                            <div class="form-text">Password will be stored securely.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="EnablePassword" class="form-label"></label>
+                            <input asp-for="EnablePassword" class="form-control" placeholder="Enable mode password" />
+                            <span asp-validation-for="EnablePassword" class="text-danger"></span>
+                            <div class="form-text">Required for privileged commands (e.g., 'show running-config').</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <input type="submit" value="Create" class="btn btn-primary" />
+                    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

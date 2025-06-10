@@ -1,0 +1,121 @@
+@model IEnumerable<NCM3.Services.SearchResult>
+
+@{
+    ViewData["Title"] = "Kết quả tìm kiếm";
+    var searchTerm = ViewBag.SearchTerm as string;
+    var router = ViewBag.Router as NCM3.Models.Router;
+}
+
+<div class="container-fluid">
+    <h1>Kết quả tìm kiếm</h1>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <a asp-action="Search" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Tìm kiếm mới
+            </a>
+        </div>
+    </div>
+    
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Thông tin tìm kiếm</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-2">
+                        <strong>Từ khóa tìm kiếm:</strong> <span class="badge bg-primary">@searchTerm</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-2">
+                        <strong>Router:</strong> 
+                        @if (router != null)
+                        {
+                            <span>@router.Hostname (@router.IpAddress)</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Tất cả router</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (Model.Any())
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i> Tìm thấy @Model.Count() kết quả.
+        </div>
+        
+        @foreach (var result in Model)
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">@result.RouterName</h5>
+                        <div>
+                            <span class="badge bg-info">Phiên bản: @result.Version</span>
+                            <span class="badge bg-secondary">@result.BackupDate.ToString("yyyy-MM-dd HH:mm")</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Số kết quả tìm thấy:</strong> @result.Matches.Count
+                    </div>
+                    
+                    <div class="search-results">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="70">Dòng</th>
+                                    <th>Nội dung</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var match in result.Matches)
+                                {
+                                    <tr>
+                                        <td class="text-center">@match.LineNumber</td>
+                                        <td>
+                                            <code style="white-space: pre-wrap; font-family: monospace;">@match.LineContent</code>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-2">
+                        <a asp-controller="Routers" asp-action="ViewConfiguration" asp-route-id="@result.ConfigId" class="btn btn-primary btn-sm">
+                            <i class="bi bi-file-text"></i> Xem cấu hình đầy đủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> Không tìm thấy kết quả nào với từ khóa "@searchTerm".
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Gợi ý</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>Kiểm tra lại chính tả của từ khóa tìm kiếm</li>
+                    <li>Thử với các từ khóa đơn giản hơn</li>
+                    <li>Tìm kiếm trong tất cả các router thay vì chỉ một router cụ thể</li>
+                </ul>
+            </div>
+        </div>
+    }
+</div> 

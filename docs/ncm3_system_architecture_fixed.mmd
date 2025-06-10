@@ -1,0 +1,70 @@
+```mermaid
+graph TD
+    %% Định nghĩa các nhóm
+    subgraph Frontend
+        browser["Web Browser"]
+        ui["Bootstrap UI"]
+        js["jQuery/JS"]
+    end
+    
+    subgraph Backend
+        controllers["MVC Controllers"]
+        routerService["Router Service"]
+        configService["Config Service"]
+        s3Service["S3 Backup Service"]
+        snmpService["SNMP Service"]
+        notifService["Notification Helper"]
+        ef["Entity Framework"]
+    end
+    
+    subgraph Database
+        routers["Routers"]
+        configs["Configurations"]
+        rules["ComplianceRules"]
+        groups["RouterGroups"]
+    end
+    
+    subgraph Devices
+        cisco["Cisco Routers"]
+        otherDevices["Other Network Devices"]
+    end
+    
+    %% Định nghĩa các thành phần khác
+    user["User"]
+    s3["AWS S3"]
+    telegram["Telegram Bot"]
+    
+    %% Kết nối giữa các thành phần
+    user --> browser
+    browser --> ui
+    ui --> js
+    js --> controllers
+    
+    controllers --> routerService
+    controllers --> configService
+    controllers --> s3Service
+    
+    routerService --> ef
+    configService --> ef
+    s3Service --> ef
+    
+    ef --> Database
+    s3Service --> s3
+    
+    snmpService --> Devices
+    routerService --> Devices
+    
+    configService --> notifService
+    notifService --> telegram
+    
+    %% Ghi chú
+    controllers -- "Includes:" --> controllerNote["HomeController<br>RoutersController<br>ConfigManagementController<br>SettingsController<br>RestoreController"]
+    
+    Database -- "Contains:" --> dbNote["Router information,<br>configurations, compliance rules,<br>backup jobs, router groups"]
+    
+    s3 -- "Stores:" --> s3Note["Configuration backups<br>with versioning"]
+    
+    telegram -- "Provides:" --> telegramNote["Real-time alerts for<br>config changes and<br>compliance violations"]
+    
+    Devices -- "Managed via:" --> devicesNote["SNMP polling and<br>SSH/Telnet configuration"]
+```

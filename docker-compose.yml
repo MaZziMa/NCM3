@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  ncm3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=db;Database=NCM3;User=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
+      - EncryptionKey=${ENCRYPTION_KEY}
+      - Telegram__BotToken=${TELEGRAM_BOT_TOKEN}
+      - Telegram__ChatId=${TELEGRAM_CHAT_ID}
+    volumes:
+      - ncm3-logs:/app/logs
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - ncm3-network
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - sqldata:/var/opt/mssql
+    networks:
+      - ncm3-network
+
+volumes:
+  sqldata:
+  ncm3-logs:
+
+networks:
+  ncm3-network:
+    driver: bridge

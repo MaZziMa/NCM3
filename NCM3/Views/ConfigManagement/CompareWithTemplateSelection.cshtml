@@ -1,0 +1,63 @@
+@{
+    ViewData["Title"] = "So sánh với Template";
+    var config = ViewBag.Config as NCM3.Models.RouterConfiguration;
+    var templates = ViewBag.Templates as SelectList;
+}
+
+<div class="container-fluid">
+    <h1>So sánh Cấu hình với Template</h1>
+    <h4>Router: @config.Router?.Hostname - Phiên bản: @config.Version</h4>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <a asp-controller="Routers" asp-action="ConfigurationHistory" asp-route-id="@config.RouterId" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại Lịch sử Cấu hình
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Chọn Template để so sánh</h5>
+        </div>
+        <div class="card-body">
+            @if (templates != null && templates.Count() > 0)
+            {
+                <form asp-action="CompareWithTemplate" method="post">
+                    <input type="hidden" name="configId" value="@config.Id" />
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Template</label>
+                                <select name="templateId" class="form-select">
+                                    @foreach (var item in templates)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-arrow-left-right"></i> So sánh với Template
+                        </button>
+                        <button type="submit" class="btn btn-info" formaction="@Url.Action("UnifiedCompareWithTemplate")">
+                            <i class="bi bi-list"></i> So sánh Kiểu Đơn
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    Không có template nào. Vui lòng <a asp-action="CreateTemplate">tạo template</a> trước.
+                </div>
+            }
+        </div>
+    </div>
+</div> 

@@ -1,0 +1,6 @@
+﻿{"Type":"Connectivity","Router":"192.168.92.135","Status":"Mất kết nối","Timestamp":"2025-05-24T12:48:27.3485744+07:00","Success":true,"Details":"Không thể kết nối đến router tại thời điểm 24/05/2025 12:48:26"}
+{"Type":"Connectivity","Router":"192.168.92.138","Status":"Mất kết nối","Timestamp":"2025-05-24T12:48:30.8805042+07:00","Success":true,"Details":"Không thể kết nối đến router tại thời điểm 24/05/2025 12:48:30"}
+{"Type":"Connectivity","Router":"r7","Status":"Mất kết nối","Timestamp":"2025-05-24T12:48:34.2857581+07:00","Success":true,"Details":"Không thể kết nối đến router tại thời điểm 24/05/2025 12:48:33"}
+{"Type":"Connectivity","Router":"192.168.92.135","Status":"Mất kết nối","Timestamp":"2025-05-24T21:50:23.2772241+07:00","Success":true,"Details":"Không thể kết nối đến router tại thời điểm 24/05/2025 21:50:22"}
+{"Type":"Connectivity","Router":"192.168.92.138","Status":"Mất kết nối","Timestamp":"2025-05-24T21:50:26.7434705+07:00","Success":true,"Details":"Không thể kết nối đến router tại thời điểm 24/05/2025 21:50:26"}
+{"Type":"Connectivity","Router":"r7","Status":"Mất kết nối","Timestamp":"2025-05-24T21:50:30.2010946+07:00","Success":true,"Details":"Không thể kết nối đến router tại thời điểm 24/05/2025 21:50:29"}

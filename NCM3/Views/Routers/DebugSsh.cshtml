@@ -1,0 +1,38 @@
+@{
+    ViewData["Title"] = "Debug SSH Connection";
+    var router = ViewBag.Router as NCM3.Models.Router;
+    var debugLog = ViewBag.DebugLog as string;
+}
+
+<div class="container-fluid">
+    <h1>Debug SSH Connection</h1>
+    <h4>@router.Hostname (@router.IpAddress)</h4>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <a asp-action="Details" asp-route-id="@router.Id" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Router Details
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Connection Debug Log</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <strong>Credentials:</strong><br/>
+                Username: @router.Username<br/>
+                Password: [Hidden]<br/>
+                Enable Password: @(string.IsNullOrEmpty(router.EnablePassword) ? "Not set" : "[Hidden]")
+            </div>
+            
+            <div class="debug-log p-3 bg-dark text-light" style="font-family: monospace; white-space: pre-wrap; max-height: 600px; overflow-y: auto;">
+                @debugLog
+            </div>
+        </div>
+    </div>
+</div> 

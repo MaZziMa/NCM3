@@ -1,0 +1,275 @@
+@model DiffPlex.DiffBuilder.Model.SideBySideDiffModel
+@{
+    ViewData["Title"] = "So sánh với Template - Kiểu Đơn";
+    var config = ViewBag.Config as NCM3.Models.RouterConfiguration;
+    var template = ViewBag.Template as NCM3.Models.ConfigTemplate;
+    var fullConfig = ViewBag.FullConfig as string;
+    var fullTemplate = ViewBag.FullTemplate as string;
+}
+
+<div class="container-fluid">
+    <h1>So sánh Cấu hình với Template - Kiểu Đơn</h1>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <a asp-controller="Routers" asp-action="ConfigurationHistory" asp-route-id="@config.RouterId" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại Lịch sử Cấu hình
+                </a>
+                <a asp-action="CompareWithTemplateSelection" asp-route-configId="@config.Id" class="btn btn-primary">
+                    <i class="bi bi-arrow-left-right"></i> So sánh với Template Khác
+                </a>
+                <a asp-action="CompareWithTemplate" asp-route-configId="@config.Id" asp-route-templateId="@template.Id" class="btn btn-info">
+                    <i class="bi bi-layout-split"></i> Xem Song Song
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Thông tin So sánh</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="m-0">Template</h6>
+                        </div>
+                        <div class="card-body">
+                            <div><strong>Tên:</strong> @template.Name</div>
+                            <div><strong>Phiên bản:</strong> @template.Version</div>
+                            <div><strong>Loại thiết bị:</strong> @(string.IsNullOrEmpty(template.DeviceType) ? "Tất cả" : template.DeviceType)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="m-0">Cấu hình Router</h6>
+                        </div>
+                        <div class="card-body">
+                            <div><strong>Router:</strong> @config.Router?.Hostname</div>
+                            <div><strong>Phiên bản:</strong> @config.Version</div>
+                            <div><strong>Ngày sao lưu:</strong> @config.BackupDate.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Kết quả So sánh</h5>
+            <div>
+                <div class="btn-group view-mode-toggle" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" id="diff-mode-btn">
+                        <i class="bi bi-intersect"></i> Chỉ Hiện Khác Biệt
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="full-mode-btn">
+                        <i class="bi bi-file-text"></i> Hiện Toàn Bộ
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-end mb-2">
+                <span class="badge bg-danger me-2">Thiếu so với Template</span>
+                <span class="badge bg-success">Thêm so với Template</span>
+            </div>
+            
+            <!-- Chế độ chỉ hiện khác biệt -->
+            <div id="diff-mode" class="diff-container">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        @{
+                            int oldLineIndex = 0;
+                            int newLineIndex = 0;
+                            int contextLines = 3; // Số dòng hiển thị trước và sau mỗi thay đổi
+                            bool inChange = false;
+                            List<bool> isDisplayed = new List<bool>();
+                            
+                            for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                            {
+                                isDisplayed.Add(false);
+                            }
+                            
+                            // Đánh dấu các dòng cần hiển thị (thay đổi và ngữ cảnh)
+                            for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                            {
+                                var oldLine = Model.OldText.Lines[i];
+                                var newLine = (i < Model.NewText.Lines.Count) ? Model.NewText.Lines[i] : null;
+                                
+                                if (oldLine.Type != DiffPlex.DiffBuilder.Model.ChangeType.Unchanged || 
+                                    (newLine != null && newLine.Type != DiffPlex.DiffBuilder.Model.ChangeType.Unchanged))
+                                {
+                                    // Hiển thị dòng thay đổi và các dòng ngữ cảnh
+                                    for (int j = Math.Max(0, i - contextLines); j <= Math.Min(Model.OldText.Lines.Count - 1, i + contextLines); j++)
+                                    {
+                                        isDisplayed[j] = true;
+                                    }
+                                }
+                            }
+                            
+                            // Hiển thị các dòng được đánh dấu
+                            bool prevDisplayed = false;
+                            for (int i = 0; i < Model.OldText.Lines.Count; i++)
+                            {
+                                if (isDisplayed[i])
+                                {
+                                    // Thêm dấu ... nếu có dòng bị ẩn
+                                    if (i > 0 && !prevDisplayed)
+                                    {
+                                        <tr>
+                                            <td class="line-number"></td>
+                                            <td class="line-content text-muted">...</td>
+                                        </tr>
+                                    }
+                                    
+                                    var oldLine = Model.OldText.Lines[i];
+                                    var newLine = (i < Model.NewText.Lines.Count) ? Model.NewText.Lines[i] : null;
+                                    
+                                    if (oldLine.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted && oldLine.Position.HasValue)
+                                    {
+                                        <tr class="diff-deleted">
+                                            <td class="line-number">@oldLine.Position</td>
+                                            <td class="line-content">- @Html.Raw(oldLine.Text.Replace(" ", "&nbsp;"))</td>
+                                        </tr>
+                                    }
+                                    else if (newLine != null && newLine.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted && newLine.Position.HasValue)
+                                    {
+                                        <tr class="diff-added">
+                                            <td class="line-number">@newLine.Position</td>
+                                            <td class="line-content">+ @Html.Raw(newLine.Text.Replace(" ", "&nbsp;"))</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td class="line-number">@oldLine.Position</td>
+                                            <td class="line-content">  @Html.Raw(oldLine.Text.Replace(" ", "&nbsp;"))</td>
+                                        </tr>
+                                    }
+                                    
+                                    prevDisplayed = true;
+                                }
+                                else
+                                {
+                                    prevDisplayed = false;
+                                }
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Chế độ hiện toàn bộ với highlighs -->
+            <div id="full-mode" class="diff-container" style="display: none;">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        @{
+                            // Tạo một bản đồ ánh xạ các dòng thay đổi
+                            var changeMap = new Dictionary<int, string>();
+                            
+                            for (int i = 0; i < Model.NewText.Lines.Count; i++)
+                            {
+                                var newLine = Model.NewText.Lines[i];
+                                var oldLine = (i < Model.OldText.Lines.Count) ? Model.OldText.Lines[i] : null;
+                                
+                                if (oldLine != null && oldLine.Type == DiffPlex.DiffBuilder.Model.ChangeType.Deleted && oldLine.Position.HasValue)
+                                {
+                                    changeMap[oldLine.Position.Value] = "deleted";
+                                }
+                                else if (newLine.Type == DiffPlex.DiffBuilder.Model.ChangeType.Inserted && newLine.Position.HasValue)
+                                {
+                                    changeMap[newLine.Position.Value] = "added";
+                                }
+                            }
+                            
+                            // Hiển thị toàn bộ cấu hình với highlights
+                            string[] lines = fullConfig.Split('\n');
+                            for (int i = 0; i < lines.Length; i++)
+                            {
+                                int lineNumber = i + 1;
+                                string lineClass = "";
+                                
+                                if (changeMap.ContainsKey(lineNumber))
+                                {
+                                    lineClass = changeMap[lineNumber] == "added" ? "diff-added" : "diff-deleted";
+                                }
+                                
+                                <tr class="@lineClass">
+                                    <td class="line-number">@lineNumber</td>
+                                    <td class="line-content">@Html.Raw(lines[i].Replace(" ", "&nbsp;"))</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .diff-container {
+        font-family: Consolas, Monaco, 'Courier New', monospace;
+        font-size: 14px;
+    }
+    
+    .diff-content {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .line-number {
+        width: 50px;
+        text-align: right;
+        color: #666;
+        background-color: #f8f9fa;
+    }
+    
+    .line-content {
+        white-space: pre;
+    }
+    
+    .diff-deleted {
+        background-color: #f8d7da;
+    }
+    
+    .diff-added {
+        background-color: #d4edda;
+    }
+    
+    #diff-mode, #full-mode {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const diffModeBtn = document.getElementById('diff-mode-btn');
+            const fullModeBtn = document.getElementById('full-mode-btn');
+            const diffMode = document.getElementById('diff-mode');
+            const fullMode = document.getElementById('full-mode');
+            
+            diffModeBtn.addEventListener('click', function() {
+                diffMode.style.display = 'block';
+                fullMode.style.display = 'none';
+                diffModeBtn.classList.add('active');
+                fullModeBtn.classList.remove('active');
+            });
+            
+            fullModeBtn.addEventListener('click', function() {
+                diffMode.style.display = 'none';
+                fullMode.style.display = 'block';
+                diffModeBtn.classList.remove('active');
+                fullModeBtn.classList.add('active');
+            });
+        });
+    </script>
+} 

@@ -1,0 +1,4 @@
+﻿{"Type":"Connectivity","Router":"R1","Status":"Đã khôi phục kết nối","Timestamp":"2025-05-20T16:03:10.3401347+07:00","Success":true,"Details":"Kết nối đến router đã được khôi phục tại thời điểm 20/05/2025 16:03:06"}
+{"Type":"Connectivity","Router":"192.168.92.135","Status":"Đã khôi phục kết nối","Timestamp":"2025-05-20T16:03:11.7360532+07:00","Success":true,"Details":"Kết nối đến router đã được khôi phục tại thời điểm 20/05/2025 16:03:11"}
+{"Type":"Connectivity","Router":"192.168.92.138","Status":"Mất kết nối","Timestamp":"2025-05-20T16:04:00.1587114+07:00","Success":true,"Details":"Không thể kết nối đến router tại thời điểm 20/05/2025 16:03:59"}
+{"Type":"Connectivity","Router":"192.168.92.135","Status":"Đã khôi phục kết nối","Timestamp":"2025-05-20T16:28:43.6006204+07:00","Success":true,"Details":"Kết nối đến router đã được khôi phục tại thời điểm 20/05/2025 16:28:43"}

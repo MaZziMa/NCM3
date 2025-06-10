@@ -1,0 +1,417 @@
+@{
+    ViewData["Title"] = "Khôi phục cấu hình Router";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <h2>Khôi phục cấu hình Router</h2>
+    
+    <div class="alert alert-warning">
+        <strong>Chú ý:</strong> Khôi phục cấu hình sẽ ghi đè lên cấu hình hiện tại của router. Vui lòng đảm bảo bạn đã chọn đúng bản sao lưu trước khi thực hiện.
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Danh sách Router</h5>
+                </div>
+                <div class="card-body router-list">
+                    <div class="list-group" id="routerList">
+                        <!-- Router list will be populated here -->
+                        <div class="text-center p-3" id="routerListLoading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 id="selectedRouterTitle">Bản sao lưu</h5>
+                    <span id="selectedRouterInfo" class="badge bg-info"></span>
+                </div>
+                <div class="card-body">
+                    <div id="noRouterSelected">
+                        <p class="text-muted">Vui lòng chọn router để xem danh sách các bản sao lưu</p>
+                    </div>
+                    <div id="backupListSection" style="display: none;">
+                        <table class="table table-striped table-hover" id="backupTable">
+                            <thead>
+                                <tr>
+                                    <th>Thời gian sao lưu</th>
+                                    <th>Loại</th>
+                                    <th>Kích thước</th>
+                                    <th>Ghi chú</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="backupList">
+                                <!-- Backup list will be populated here -->
+                            </tbody>
+                        </table>
+                        <div class="text-center p-3" id="backupListLoading" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div id="noBackupsAvailable" style="display: none;">
+                            <p class="text-muted">Không có bản sao lưu nào cho router này</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Backup Detail Modal -->
+            <div class="modal fade" id="backupDetailModal" tabindex="-1" aria-labelledby="backupDetailModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="backupDetailModalLabel">Chi tiết bản sao lưu</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Router:</label>
+                                <span id="detailRouterName"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Thời gian sao lưu:</label>
+                                <span id="detailBackupTime"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Loại:</label>
+                                <span id="detailBackupType"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Ghi chú:</label>
+                                <span id="detailBackupComment"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nội dung:</label>
+                                <pre id="detailBackupContent" class="p-3 border rounded bg-light" style="max-height: 400px; overflow-y: auto;"></pre>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Restore Confirmation Modal -->
+            <div class="modal fade" id="restoreConfirmModal" tabindex="-1" aria-labelledby="restoreConfirmModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="restoreConfirmModalLabel">Xác nhận khôi phục</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <strong>Cảnh báo:</strong> Khôi phục cấu hình sẽ ghi đè lên cấu hình hiện tại của router. Thao tác này không thể hoàn tác.
+                            </div>
+                            <p>Bạn có chắc chắn muốn khôi phục router <strong id="restoreRouterName"></strong> về cấu hình từ ngày <strong id="restoreBackupDate"></strong>?</p>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="createBackupBeforeRestore" checked>
+                                <label class="form-check-label" for="createBackupBeforeRestore">
+                                    Tạo bản sao lưu cấu hình hiện tại trước khi khôi phục
+                                </label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-danger" id="confirmRestoreBtn">Khôi phục</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Result Modal -->
+            <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="resultModalLabel">Kết quả thao tác</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="resultMessage"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>    // Global variables
+    let selectedRouterId = null;
+    let selectedBackupId = null;
+    
+    function loadRouters() {
+        $.ajax({
+            url: '/Home/GetRouters',
+            type: 'GET',
+            success: function(response) {
+                if (response.error) {
+                    $('#routerList').html(`
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i> ${response.error}
+                        </div>
+                    `);
+                } else {
+                    const routerListHtml = response.map(router => `
+                        <a href="#" class="list-group-item list-group-item-action router-item ${router.isAvailable ? '' : 'text-danger'}" 
+                           data-id="${router.id}" 
+                           data-name="${router.hostname}" 
+                           data-ip="${router.ipAddress}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${router.hostname}</h6>
+                                    <small class="text-muted">${router.ipAddress}</small>
+                                </div>
+                                ${!router.isAvailable ? '<i class="bi bi-exclamation-circle text-danger" title="Router không hoạt động"></i>' : ''}
+                            </div>
+                        </a>
+                    `).join('');
+                    
+                    $('#routerList').html(routerListHtml);
+                }
+                $('#routerListLoading').hide();
+            },
+            error: function(xhr, status, error) {
+                $('#routerList').html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Không thể tải danh sách router: ${error}
+                    </div>
+                `);
+                $('#routerListLoading').hide();
+            }
+        });
+    }
+    
+    $(document).ready(function() {
+        loadRouters();
+        
+        // Router selection event
+        $(document).on('click', '.router-item', function() {
+            const routerId = $(this).data('id');
+            $('.router-item').removeClass('active');
+            $(this).addClass('active');
+            selectedRouterId = routerId;
+            
+            const routerName = $(this).data('name');
+            const routerIp = $(this).data('ip');
+            $('#selectedRouterTitle').text(`Bản sao lưu - ${routerName}`);
+            $('#selectedRouterInfo').text(routerIp);
+            
+            $('#noRouterSelected').hide();
+            $('#backupListSection').show();
+            
+            loadBackups(routerId);
+        });
+        
+        // View backup detail button event
+        $(document).on('click', '.view-backup-btn', function() {
+            const backupId = $(this).data('id');
+            viewBackupDetail(backupId);
+        });
+        
+        // Restore button event
+        $(document).on('click', '.restore-btn', function() {
+            const backupId = $(this).data('id');
+            const backupDate = $(this).data('date');
+            const routerName = $('#selectedRouterTitle').text().replace('Bản sao lưu - ', '');
+            
+            selectedBackupId = backupId;
+            $('#restoreRouterName').text(routerName);
+            $('#restoreBackupDate').text(backupDate);
+            $('#restoreConfirmModal').modal('show');
+        });
+        
+        // Confirm restore button event
+        $('#confirmRestoreBtn').click(function() {
+            if (selectedRouterId && selectedBackupId) {
+                const createBackup = $('#createBackupBeforeRestore').prop('checked');
+                restoreRouter(selectedRouterId, selectedBackupId, createBackup);
+                $('#restoreConfirmModal').modal('hide');
+            }
+        });
+    });
+    
+    // Load backups for a router
+    function loadBackups(routerId) {
+        $('#backupListLoading').show();
+        $('#backupList').empty();
+        $('#noBackupsAvailable').hide();
+        
+        $.ajax({
+            url: `/api/restore/router/${routerId}/backups`,
+            type: 'GET',
+            success: function(response) {
+                $('#backupListLoading').hide();
+                
+                if (response.success && response.backups && response.backups.length > 0) {
+                    const backupList = $('#backupList');
+                    backupList.empty();
+                    
+                    response.backups.forEach(function(backup) {
+                        const localDate = new Date(backup.backupDate + 'Z'); // Đánh dấu là UTC bằng 'Z'
+                        const date = localDate.toLocaleString();
+                        backupList.append(`
+                            <tr>
+                                <td>${date}</td>
+                                <td>${backup.backupType || 'Regular'}</td>
+                                <td>${formatBytes(backup.configSize)}</td>
+                                <td>${backup.comment || '-'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary view-backup-btn" data-id="${backup.id}">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning restore-btn" data-id="${backup.id}" data-date="${date}">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Khôi phục
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                } else {
+                    $('#noBackupsAvailable').show();
+                }
+            },
+            error: function(err) {
+                $('#backupListLoading').hide();
+                $('#backupList').html(`
+                    <tr>
+                        <td colspan="5">
+                            <div class="alert alert-danger">Không thể tải danh sách bản sao lưu</div>
+                        </td>
+                    </tr>
+                `);
+                console.error('Error loading backups:', err);
+            }
+        });
+    }
+    
+    // View backup details
+    function viewBackupDetail(backupId) {
+        $.ajax({
+            url: `/api/restore/backup/${backupId}`,
+            type: 'GET',
+            success: function(response) {
+                if (response.success && response.backup) {
+                    $('#detailRouterName').text(response.backup.router.hostname);
+                    $('#detailBackupTime').text(new Date(response.backackup.backupDate).toLocaleString()); // Fixed typo here
+                    $('#detailBackupType').text(response.backup.backupType || 'Regular');
+                    $('#detailBackupComment').text(response.backup.comment || '-');
+                    $('#detailBackupContent').text(response.backup.content);
+                    
+                    $('#backupDetailModal').modal('show');
+                } else {
+                    showResultModal(false, 'Không thể tải chi tiết bản sao lưu');
+                }
+            },
+            error: function(err) {
+                showResultModal(false, 'Lỗi khi tải chi tiết bản sao lưu');
+                console.error('Error loading backup detail:', err);
+            }
+        });
+    }
+    
+    // Restore router configuration
+    function restoreRouter(routerId, backupId, createBackup) {
+        $.ajax({
+            url: `/api/restore/router/${routerId}`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                backupId: backupId,
+                createBackupBeforeRestore: createBackup
+            }),
+            success: function(response) {
+                if (response.success) {
+                    showResultModal(true, response.message);
+                    // Reload backups after successful restore
+                    loadBackups(routerId);
+                } else {
+                    showResultModal(false, response.message || 'Khôi phục thất bại');
+                }
+            },
+            error: function(err) {
+                let errorMsg = 'Lỗi khi khôi phục cấu hình';
+                if (err.responseJSON && err.responseJSON.message) {
+                    errorMsg = err.responseJSON.message;
+                }
+                showResultModal(false, errorMsg);
+                console.error('Error restoring configuration:', err);
+            }
+        });
+    }
+    
+    // Show result modal
+    function showResultModal(success, message) {
+        const msgElement = $('#resultMessage');
+        msgElement.empty();
+        
+        if (success) {
+            msgElement.html(`
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> ${message}
+                </div>
+            `);
+        } else {
+            msgElement.html(`
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> ${message}
+                </div>
+            `);
+        }
+        
+        $('#resultModal').modal('show');
+    }
+    
+    // Format bytes to human readable format
+    function formatBytes(bytes, decimals = 2) {
+        const numBytes = parseFloat(bytes);
+
+        if (isNaN(numBytes) || !isFinite(numBytes) || numBytes < 0) {
+            return '-'; // Return a dash for invalid or non-numeric input
+        }
+        if (numBytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        
+        const i = Math.floor(Math.log(numBytes) / Math.log(k));
+        
+        // Ensure 'i' is within the bounds of the 'sizes' array
+        // If 'i' is negative (bytes between 0 and 1), use 'Bytes'.
+        const unitIndex = Math.max(0, Math.min(i, sizes.length - 1));
+
+        return parseFloat((numBytes / Math.pow(k, unitIndex)).toFixed(dm)) + ' ' + sizes[unitIndex];
+    }
+</script>
+}
+
+@section Styles {
+<style>
+    .router-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    pre {
+        white-space: pre-wrap;
+    }
+</style>
+}

@@ -1,0 +1,96 @@
+@model NCM3.Models.Router
+
+@{
+    ViewData["Title"] = "Edit Router";
+}
+
+<div class="container-fluid">
+    <h1>Edit Router</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Router Details</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Edit">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Status" />
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Hostname" class="form-label"></label>
+                            <input asp-for="Hostname" class="form-control" />
+                            <span asp-validation-for="Hostname" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="IpAddress" class="form-label"></label>
+                            <input asp-for="IpAddress" class="form-control" />
+                            <span asp-validation-for="IpAddress" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                            <div class="form-text">Leave blank to keep current password.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="EnablePassword" class="form-label"></label>
+                            <input asp-for="EnablePassword" class="form-control" />
+                            <span asp-validation-for="EnablePassword" class="text-danger"></span>
+                            <div class="form-text">Leave blank to keep current enable password.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Model" class="form-label"></label>
+                            <input asp-for="Model" class="form-control" readonly />
+                            <span asp-validation-for="Model" class="text-danger"></span>
+                            <div class="form-text">This is automatically detected.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="OSVersion" class="form-label"></label>
+                            <input asp-for="OSVersion" class="form-control" readonly />
+                            <span asp-validation-for="OSVersion" class="text-danger"></span>
+                            <div class="form-text">This is automatically detected.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <input type="submit" value="Save" class="btn btn-primary" />
+                    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 
