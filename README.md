@@ -236,7 +236,7 @@ Hệ thống sẽ tự động phát hiện thay đổi cấu hình thông qua:
 
 ### 6. Cấu hình thông báo Telegram
 
-1. Tạo bot Telegram và lấy Bot Token (xem hướng dẫn [tại đây]([https://core.telegram.org/bots#creating-a-new-bot](https://topdev.vn/blog/telegram-tao-bot-va-lam-vai-thu-vui-ve/)))
+1. Tạo bot Telegram và lấy Bot Token (xem hướng dẫn [tại đây](https://topdev.vn/blog/telegram-tao-bot-va-lam-vai-thu-vui-ve/))
 2. Tạo nhóm Telegram và thêm bot vào nhóm
 3. Lấy Chat ID của nhóm
 4. Cập nhật thông tin trong `appsettings.secrets.json`
