@@ -153,7 +153,7 @@ chmod +x run.sh
 
 ```powershell
 # Sử dụng PowerShell script
-cd ./NCM3 ;..\run-project.bat
+cd ./NCM3 ;.\run-project.bat
 
 ### Khởi động thủ công
 
