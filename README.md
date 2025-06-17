@@ -269,5 +269,5 @@ Hệ thống sẽ tự động phát hiện thay đổi cấu hình thông qua:
 Nếu bạn gặp vấn đề hoặc có đóng góp, vui lòng:
 - Tạo Issue trên GitHub
 - Gửi Pull Request với cải tiến
-- Liên hệ qua email: support@ncm3.example.com
+- Liên hệ qua email: sang59498@gmail.com
 
