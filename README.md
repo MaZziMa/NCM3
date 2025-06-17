@@ -153,20 +153,7 @@ chmod +x run.sh
 
 ```powershell
 # Sử dụng PowerShell script
-.\run.ps1 start
-
-# Hoặc sử dụng batch file
-run.bat start
-
-# Các lệnh khác
-run.bat stop         # Dừng NCM3
-run.bat status       # Kiểm tra trạng thái  
-run.bat logs         # Xem logs
-run.bat test         # Chạy test
-run.bat update       # Cập nhật database
-run.bat docker       # Quản lý Docker
-run.bat help         # Hiển thị trợ giúp
-```
+cd ./NCM3 ;..\run-project.bat
 
 ### Khởi động thủ công
 
