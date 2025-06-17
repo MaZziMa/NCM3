@@ -130,7 +130,7 @@ Nếu cần ghi đè các cài đặt cho môi trường phát triển, sử d�
 
 NCM3 cung cấp các script chạy (run scripts) để quản lý vòng đời ứng dụng một cách dễ dàng.
 
-#### Trên Linux/macOS:
+#### Trên Linux/macOS: (chưa được test)
 
 ```bash
 # Cấp quyền thực thi cho script
