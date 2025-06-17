@@ -272,3 +272,5 @@ E:\NCM3\NCM3\obj\Debug\net8.0\ref\NCM3.dll
 E:\NCM3\NCM3\bin\Debug\net8.0\AWSSDK.Core.dll
 E:\NCM3\NCM3\bin\Debug\net8.0\AWSSDK.Extensions.NETCore.Setup.dll
 E:\NCM3\NCM3\bin\Debug\net8.0\AWSSDK.S3.dll
+E:\NCM3\NCM3\obj\Debug\net8.0\NCM3.sourcelink.json
+E:\NCM3\NCM3\bin\Debug\net8.0\appsettings.secrets.json

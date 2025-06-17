@@ -84,6 +84,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxSZXN0b3JlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[E:/NCM3/NCM3/Views/RouterCli/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUm91dGVyQ2xpXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [E:/NCM3/NCM3/Views/Routers/ConfigurationHistory.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUm91dGVyc1xDb25maWd1cmF0aW9uSGlzdG9yeS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -122,10 +126,6 @@ build_metadata.AdditionalFiles.CssScope =
 
 [E:/NCM3/NCM3/Views/Settings/NotificationHistory.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2V0dGluZ3NcTm90aWZpY2F0aW9uSGlzdG9yeS5jc2h0bWw=
-build_metadata.AdditionalFiles.CssScope = 
-
-[E:/NCM3/NCM3/Views/Shared/Error.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [E:/NCM3/NCM3/Views/Shared/_AlertMessages.cshtml]

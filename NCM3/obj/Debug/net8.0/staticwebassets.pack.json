@@ -5,6 +5,18 @@
       "PackagePath": "staticwebassets\\NCM3.qfo6lfoo1u.bundle.scp.css"
     },
     {
+      "Id": "E:\\NCM3\\NCM3\\wwwroot\\css\\cli-highlight.css",
+      "PackagePath": "staticwebassets\\css\\cli-highlight.css"
+    },
+    {
+      "Id": "E:\\NCM3\\NCM3\\wwwroot\\css\\router-cli-right-aligned.css",
+      "PackagePath": "staticwebassets\\css\\router-cli-right-aligned.css"
+    },
+    {
+      "Id": "E:\\NCM3\\NCM3\\wwwroot\\css\\router-cli.css",
+      "PackagePath": "staticwebassets\\css\\router-cli.css"
+    },
+    {
       "Id": "E:\\NCM3\\NCM3\\wwwroot\\css\\site.css",
       "PackagePath": "staticwebassets\\css\\site.css"
     },
@@ -15,6 +27,10 @@
     {
       "Id": "E:\\NCM3\\NCM3\\wwwroot\\js\\dashboard.js",
       "PackagePath": "staticwebassets\\js\\dashboard.js"
+    },
+    {
+      "Id": "E:\\NCM3\\NCM3\\wwwroot\\js\\router-cli-port.js",
+      "PackagePath": "staticwebassets\\js\\router-cli-port.js"
     },
     {
       "Id": "E:\\NCM3\\NCM3\\wwwroot\\js\\site.js",

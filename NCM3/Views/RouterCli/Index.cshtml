@@ -1,0 +1,360 @@
+@model Router
+@{
+    ViewData["Title"] = $"CLI - {ViewBag.Router.Hostname}";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid mt-3">
+    <h2>CLI - @ViewBag.Router.Hostname</h2>
+    <div class="row mb-3">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>IP:</strong> @ViewBag.Router.IpAddress
+                    <span class="mx-2">|</span>
+                    <strong id="connection-status-label">Trạng thái:</strong> 
+                    <span id="connection-status" class="badge bg-secondary">Chưa kết nối</span>
+                </div>
+                <div>
+                    <button id="connect-btn" class="btn btn-success">
+                        <i class="fas fa-plug"></i> Kết nối
+                    </button>
+                    <button id="disconnect-btn" class="btn btn-danger" disabled>
+                        <i class="fas fa-unlink"></i> Ngắt kết nối
+                    </button>
+                    <button id="clear-btn" class="btn btn-secondary">
+                        <i class="fas fa-eraser"></i> Xóa màn hình
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div id="terminal" class="terminal p-3">
+                <div id="output" class="mb-3"></div>
+                <div id="input-line" class="d-flex">
+                    <span id="prompt" class="prompt me-2">&gt;</span>
+                    <input type="text" id="command-input" class="command-input flex-grow-1" autofocus />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Trợ giúp nhanh</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Các lệnh thông dụng:</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <ul class="command-list">
+                                <li><code>show running-config</code> - Xem cấu hình hiện tại</li>
+                                <li><code>show ip interface brief</code> - Xem thông tin các interface</li>
+                                <li><code>show version</code> - Xem phiên bản IOS</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <ul class="command-list">
+                                <li><code>configure terminal</code> - Vào chế độ cấu hình</li>
+                                <li><code>show ip route</code> - Xem bảng định tuyến</li>
+                                <li><code>show cdp neighbors</code> - Xem thiết bị kết nối</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <ul class="command-list">
+                                <li><code>terminal length 0</code> - Tắt phân trang</li>
+                                <li><code>show clock</code> - Xem thời gian hệ thống</li>
+                                <li><code>show logging</code> - Xem nhật ký hệ thống</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .terminal {
+            background-color: #000;
+            color: #33ff33;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            min-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .command-input {
+            background-color: transparent;
+            border: none;
+            color: #33ff33;
+            font-family: 'Courier New', monospace;
+            outline: none;
+            padding: 0;
+            width: 100%;
+        }
+
+        .command-output {
+            margin: 0;
+            padding: 0;
+        }
+
+        .prompt {
+            user-select: none;
+        }
+        
+        .command-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .command-list li {
+            margin-bottom: 8px;
+        }
+        
+        .bg-connected {
+            background-color: #28a745 !important;
+        }
+        
+        .bg-disconnected {
+            background-color: #dc3545 !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const routerId = @ViewBag.Router.Id;
+            let connected = false;
+            let commandHistory = [];
+            let historyIndex = -1;
+            
+            // Terminal elements
+            const terminal = $("#terminal");
+            const output = $("#output");
+            const commandInput = $("#command-input");
+            const prompt = $("#prompt");
+            const connectBtn = $("#connect-btn");
+            const disconnectBtn = $("#disconnect-btn");
+            const clearBtn = $("#clear-btn");
+            const connectionStatus = $("#connection-status");
+            
+            // Check initial connection status
+            checkConnectionStatus();
+            
+            // Connect button click
+            connectBtn.on("click", function() {
+                if (!connected) {
+                    connect();
+                }
+            });
+            
+            // Disconnect button click
+            disconnectBtn.on("click", function() {
+                if (connected) {
+                    disconnect();
+                }
+            });
+            
+            // Clear button click
+            clearBtn.on("click", function() {
+                clearTerminal();
+            });
+            
+            // Handle command input
+            commandInput.on("keydown", function(e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    const command = commandInput.val();
+                    if (command.trim() !== "") {
+                        sendCommand(command);
+                        // Add to history
+                        commandHistory.push(command);
+                        historyIndex = commandHistory.length;
+                    }
+                    commandInput.val("");
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    if (historyIndex > 0) {
+                        historyIndex--;
+                        commandInput.val(commandHistory[historyIndex]);
+                    }
+                } else if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    if (historyIndex < commandHistory.length - 1) {
+                        historyIndex++;
+                        commandInput.val(commandHistory[historyIndex]);
+                    } else {
+                        historyIndex = commandHistory.length;
+                        commandInput.val("");
+                    }
+                }
+            });
+            
+            // Always focus on input when terminal clicked
+            terminal.on("click", function() {
+                commandInput.focus();
+            });
+              function connect() {
+                writeToTerminal("Đang kết nối đến router...");
+                $.ajax({
+                    url: `/RouterCli/Connect/${routerId}`,
+                    type: "POST",
+                    success: function(response) {
+                        if (response.success) {
+                            connected = true;
+                            connectionStatus.text("Đã kết nối");
+                            connectionStatus.removeClass("bg-secondary").addClass("bg-connected");
+                            connectBtn.prop("disabled", true);
+                            disconnectBtn.prop("disabled", false);
+                            writeToTerminal("Kết nối thành công đến router.");
+                            
+                            // Thêm một chút độ trễ để đảm bảo kết nối đã được thiết lập hoàn toàn
+                            setTimeout(function() {
+                                checkConnectionStatus(); // To get prompt
+                            }, 1000);
+                        } else {
+                            writeToTerminal(`Lỗi: ${response.message}`);
+                            // Reset trạng thái UI khi gặp lỗi
+                            connected = false;
+                            connectionStatus.text("Chưa kết nối");
+                            connectionStatus.removeClass("bg-connected").addClass("bg-secondary");
+                            connectBtn.prop("disabled", false);
+                            disconnectBtn.prop("disabled", true);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        writeToTerminal(`Lỗi kết nối: ${error}`);
+                        // Reset trạng thái UI khi gặp lỗi
+                        connected = false;
+                        connectionStatus.text("Chưa kết nối");
+                        connectionStatus.removeClass("bg-connected").addClass("bg-secondary");
+                        connectBtn.prop("disabled", false);
+                        disconnectBtn.prop("disabled", true);
+                    }
+                });
+            }
+            
+            function disconnect() {
+                $.ajax({
+                    url: `/RouterCli/Disconnect/${routerId}`,
+                    type: "POST",
+                    success: function(response) {
+                        connected = false;
+                        connectionStatus.text("Đã ngắt kết nối");
+                        connectionStatus.removeClass("bg-connected").addClass("bg-secondary");
+                        connectBtn.prop("disabled", false);
+                        disconnectBtn.prop("disabled", true);
+                        prompt.text(">");
+                        writeToTerminal("Đã ngắt kết nối khỏi router.");
+                    },
+                    error: function(xhr, status, error) {
+                        writeToTerminal(`Lỗi khi ngắt kết nối: ${error}`);
+                    }
+                });
+            }
+            
+            function sendCommand(command) {
+                if (!connected) {
+                    writeToTerminal("Bạn chưa kết nối đến router. Vui lòng kết nối trước khi thực hiện lệnh.");
+                    return;
+                }
+                
+                // Show command in terminal
+                writeToTerminal(`${prompt.text()} ${command}`);
+                
+                // Send command to server
+                $.ajax({
+                    url: `/RouterCli/ExecuteCommand/${routerId}`,
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ command: command }),
+                    success: function(response) {
+                        if (response.success) {
+                            writeToTerminal(response.output);
+                            if (response.prompt) {
+                                prompt.text(response.prompt);
+                            }
+                        } else {
+                            writeToTerminal(`Lỗi: ${response.message}`);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        writeToTerminal(`Lỗi: ${error}`);
+                    }
+                });
+            }
+              function checkConnectionStatus() {
+                $.ajax({
+                    url: `/RouterCli/CheckConnection/${routerId}`,
+                    type: "GET",
+                    timeout: 5000, // Thêm timeout để tránh yêu cầu bị treo
+                    success: function(response) {
+                        connected = response.connected;
+                        if (connected) {
+                            connectionStatus.text("Đã kết nối");
+                            connectionStatus.removeClass("bg-secondary").addClass("bg-connected");
+                            connectBtn.prop("disabled", true);
+                            disconnectBtn.prop("disabled", false);
+                            
+                            if (response.prompt) {
+                                prompt.text(response.prompt);
+                                writeToTerminal(`Đã nhận được prompt: ${response.prompt}`);
+                            } else {
+                                writeToTerminal("Đã kết nối nhưng không nhận được prompt từ router");
+                                prompt.text("> ");
+                            }
+                        } else {
+                            if (connectionStatus.text() === "Đã kết nối") {
+                                // Nếu trước đó đã báo là kết nối rồi nhưng giờ thì mất kết nối
+                                writeToTerminal("Đã mất kết nối đến router. Vui lòng thử kết nối lại.");
+                            }
+                            connectionStatus.text("Chưa kết nối");
+                            connectionStatus.removeClass("bg-connected").addClass("bg-secondary");
+                            connectBtn.prop("disabled", false);
+                            disconnectBtn.prop("disabled", true);
+                            prompt.text("> ");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Lỗi kiểm tra trạng thái kết nối:", error);
+                        writeToTerminal(`Lỗi kiểm tra kết nối: ${error}`);
+                        // Reset trạng thái khi gặp lỗi
+                        connected = false;
+                        connectionStatus.text("Chưa kết nối");
+                        connectionStatus.removeClass("bg-connected").addClass("bg-secondary");
+                        connectBtn.prop("disabled", false);
+                        disconnectBtn.prop("disabled", true);
+                    }
+                });
+            }
+              function writeToTerminal(text) {
+                if (!text) return;
+                
+                const outputElement = $("<pre>").addClass("command-output").text(text);
+                output.append(outputElement);
+                
+                // Sửa: Sử dụng setTimeout để đảm bảo scrollTop hoạt động sau khi DOM đã được cập nhật
+                setTimeout(function() {
+                    terminal[0].scrollTop = terminal[0].scrollHeight;
+                }, 0);
+            }
+            
+            function clearTerminal() {
+                output.empty();
+            }
+            
+            // Auto focus on command input
+            commandInput.focus();
+        });
+    </script>
+}

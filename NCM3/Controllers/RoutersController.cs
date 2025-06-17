@@ -93,6 +93,25 @@ namespace NCM3.Controllers
                 router.IsAvailable = false; // Set default availability status to false
                 _context.Add(router);
                 await _context.SaveChangesAsync();
+                
+                // Gửi thông báo đến Telegram về router mới
+                try
+                {
+                    await _telegramService.SendRouterAddedNotificationAsync(
+                        router.Hostname,
+                        router.IpAddress,
+                        router.Model ?? "Không xác định",
+                        router.OSVersion ?? "Không xác định"
+                    );
+                    _logger.LogInformation("Đã gửi thông báo Telegram về router mới {RouterName}", router.Hostname);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi khi gửi thông báo Telegram về router mới {RouterName}: {Message}", 
+                        router.Hostname, ex.Message);
+                    // Không dừng luồng chính nếu gặp lỗi khi gửi thông báo
+                }
+                
                 return RedirectToAction(nameof(Index));
             }
             return View(router);

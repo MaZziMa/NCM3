@@ -15,6 +15,13 @@ using Amazon.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Đọc file appsettings.secrets.json nếu tồn tại
+string secretsFilePath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.secrets.json");
+if (File.Exists(secretsFilePath))
+{
+    builder.Configuration.AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true);
+}
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -46,6 +53,7 @@ builder.Services.AddScoped<IWebhookNotificationService, WebhookNotificationServi
 builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
 builder.Services.AddScoped<NotificationHelper>();
 builder.Services.AddScoped<NotificationLogger>();
+builder.Services.AddScoped<IRouterCliService, RouterCliService>();
 
 // Add AWS S3 services
 var awsOptions = builder.Configuration.GetAWSOptions();

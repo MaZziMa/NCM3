@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NCM3")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e73a6071e12a5306de161885ddf41d6bb43ddf2b")]
 [assembly: System.Reflection.AssemblyProductAttribute("NCM3")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NCM3")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

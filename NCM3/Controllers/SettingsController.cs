@@ -168,28 +168,33 @@ namespace NCM3.Controllers
             }
             
             return RedirectToAction(nameof(Index));
-        }          [HttpPost]
+        }        [HttpPost]
         public async Task<IActionResult> TestTelegramConnection()
         {
             var viewModel = new SettingsViewModel();
             
             try
             {
-                // Create a long test message to verify truncation works
-                var longTestMessage = "Thông báo này chỉ để xác nhận kết nối thành công giữa NCM3 và Telegram.\n\n" + 
-                                     GenerateLongTestMessage();
+                // Sử dụng phương thức SendTestMessageAsync mới
+                bool success = await _telegramService.SendTestMessageAsync();
                 
-                await _telegramService.SendConfigChangeNotificationAsync(
-                    "Kiểm tra kết nối",
-                    "Thử nghiệm",
-                    longTestMessage);
+                if (success)
+                {
+                    viewModel.TestResult = "Kết nối thành công! Đã gửi tin nhắn kiểm tra đến Telegram. Kiểm tra xem tin nhắn có hiển thị đúng và không bị lỗi.";
+                    viewModel.TestSuccessful = true;
+                    
+                    _logger.LogInformation("Kiểm tra kết nối Telegram thành công");
+                }
+                else
+                {
+                    viewModel.TestResult = "Không thể gửi tin nhắn kiểm tra đến Telegram. Vui lòng kiểm tra cấu hình Bot Token và Chat ID.";
+                    viewModel.TestSuccessful = false;
+                    
+                    _logger.LogWarning("Kiểm tra kết nối Telegram thất bại - không thể gửi tin nhắn");
+                }
                 
-                viewModel.TestResult = "Kết nối thành công! Đã gửi tin nhắn kiểm tra đến Telegram. Kiểm tra xem tin nhắn có hiển thị đúng và không bị lỗi.";
-                viewModel.TestSuccessful = true;
-                
-                _logger.LogInformation("Kiểm tra kết nối Telegram thành công");
                 TempData["TestResult"] = viewModel.TestResult;
-                TempData["TestSuccessful"] = true;
+                TempData["TestSuccessful"] = viewModel.TestSuccessful;
             }
             catch (Exception ex)
             {

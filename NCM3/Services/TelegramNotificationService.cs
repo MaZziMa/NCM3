@@ -21,7 +21,9 @@ namespace NCM3.Services
         Task SendComplianceAlertAsync(string routerName, string ruleName, string severity, string details);
         Task SendConnectivityAlertAsync(string routerName, string status, string details);
         Task SendConfigurationChangedEventAsync(ConfigurationChangedEvent configChangedEvent);
+        Task SendRouterAddedNotificationAsync(string routerName, string ipAddress, string model, string osVersion);
         Task SendDailySummaryAsync();
+        Task<bool> SendTestMessageAsync();
         void Initialize();
     }    public class TelegramNotificationService : ITelegramNotificationService, IDisposable
     {
@@ -31,6 +33,8 @@ namespace NCM3.Services
         private readonly ILogger<TelegramNotificationService> _logger;
         private readonly NotificationLogger? _notificationLogger;
         private readonly IConfiguration _configuration;
+        private readonly bool _useProxy;
+        private readonly string? _proxyApiUrl;
         
         private System.Timers.Timer? _consolidationTimer;
         private System.Timers.Timer? _dailySummaryTimer;
@@ -47,9 +51,11 @@ namespace NCM3.Services
             _configuration = configuration;
             _botToken = configuration["Telegram:BotToken"];
             _chatId = configuration["Telegram:ChatId"];
+            _useProxy = configuration.GetValue<bool>("Telegram:UseProxy", false);
+            _proxyApiUrl = configuration["Telegram:ProxyApiUrl"];
             _logger = logger;
             _notificationLogger = notificationLogger;
-        }public async Task SendConfigChangeNotificationAsync(string routerName, string changeType, string details, string priority = "Low")
+        }    public async Task SendConfigChangeNotificationAsync(string routerName, string changeType, string details, string priority = "Low")
         {
             if (string.IsNullOrEmpty(_botToken) || string.IsNullOrEmpty(_chatId))
             {
@@ -62,7 +68,7 @@ namespace NCM3.Services
                         routerName, 
                         changeType, 
                         "Bỏ qua do Telegram chưa được cấu hình", 
-                        false);
+                        false).ConfigureAwait(false);
                 }
                 
                 return; // Skip if Telegram is not configured
@@ -74,7 +80,7 @@ namespace NCM3.Services
                          $"*Mức độ ưu tiên:* {priority}\n" +
                          $"*Chi tiết:*\n{details}";
 
-            bool success = await SendTelegramMessageAsync(message);
+            bool success = await SendTelegramMessageAsync(message).ConfigureAwait(false);
             
             // Ghi log thông báo
             if (_notificationLogger != null)
@@ -83,10 +89,10 @@ namespace NCM3.Services
                     routerName, 
                     changeType, 
                     details, 
-                    success);
+                    success).ConfigureAwait(false);
             }
         }
-          public async Task SendComplianceAlertAsync(string routerName, string ruleName, string severity, string details)
+        public async Task SendComplianceAlertAsync(string routerName, string ruleName, string severity, string details)
         {
             if (string.IsNullOrEmpty(_botToken) || string.IsNullOrEmpty(_chatId))
             {
@@ -100,7 +106,7 @@ namespace NCM3.Services
                         ruleName, 
                         severity,
                         "Bỏ qua do Telegram chưa được cấu hình", 
-                        false);
+                        false).ConfigureAwait(false);
                 }
                 
                 return;
@@ -112,7 +118,7 @@ namespace NCM3.Services
                          $"*Mức độ:* {severity}\n" +
                          $"*Chi tiết:*\n{details}";
 
-            bool success = await SendTelegramMessageAsync(message);
+            bool success = await SendTelegramMessageAsync(message).ConfigureAwait(false);
             
             // Ghi log thông báo
             if (_notificationLogger != null)
@@ -122,10 +128,10 @@ namespace NCM3.Services
                     ruleName, 
                     severity,
                     details, 
-                    success);
+                    success).ConfigureAwait(false);
             }
         }
-          public async Task SendConnectivityAlertAsync(string routerName, string status, string details)
+        public async Task SendConnectivityAlertAsync(string routerName, string status, string details)
         {
             if (string.IsNullOrEmpty(_botToken) || string.IsNullOrEmpty(_chatId))
             {
@@ -138,7 +144,7 @@ namespace NCM3.Services
                         routerName, 
                         status, 
                         "Bỏ qua do Telegram chưa được cấu hình", 
-                        false);
+                        false).ConfigureAwait(false);
                 }
                 
                 return;
@@ -149,7 +155,7 @@ namespace NCM3.Services
                          $"*Trạng thái:* {status}\n" +
                          $"*Chi tiết:*\n{details}";
 
-            bool success = await SendTelegramMessageAsync(message);
+            bool success = await SendTelegramMessageAsync(message).ConfigureAwait(false);
             
             // Ghi log thông báo
             if (_notificationLogger != null)
@@ -158,13 +164,17 @@ namespace NCM3.Services
                     routerName, 
                     status, 
                     details, 
-                    success);
+                    success).ConfigureAwait(false);
             }
-        }      private async Task<bool> SendTelegramMessageAsync(string message)
+        }    private async Task<bool> SendTelegramMessageAsync(string message)
     {
         try
         {
-            var url = $"https://api.telegram.org/bot{_botToken}/sendMessage";
+            string baseUrl = _useProxy && !string.IsNullOrEmpty(_proxyApiUrl) 
+                ? _proxyApiUrl 
+                : "https://api.telegram.org";
+                
+            var url = $"{baseUrl}/bot{_botToken}/sendMessage";
             string? parseMode = _configuration.GetValue<string>("Telegram:NotificationFormat", "MarkdownV2");
             parseMode ??= "MarkdownV2";
             bool enableMarkdown = _configuration.GetValue<bool>("Telegram:EnableMarkdownFormatting", true);
@@ -211,11 +221,25 @@ namespace NCM3.Services
             _logger.LogDebug("Sending Telegram message with parse_mode: {ParseMode}", parseMode);
             _logger.LogTrace("Message content length: {Length}", formattedMessage.Length);
 
-            var response = await _httpClient.PostAsync(url, content);
+            HttpResponseMessage response;
+            
+            if (_useProxy && !string.IsNullOrEmpty(_proxyApiUrl))
+            {
+                // Use proxy configuration
+                _logger.LogInformation("Sending Telegram message via proxy: {ProxyApiUrl}", _proxyApiUrl);
+                
+                // For Cloudflare worker proxy
+                response = await _httpClient.PostAsync(url, content).ConfigureAwait(false);
+            }
+            else
+            {
+                // Direct connection
+                response = await _httpClient.PostAsync(url, content).ConfigureAwait(false);
+            }
             
             if (!response.IsSuccessStatusCode)
             {
-                var errorResponse = await response.Content.ReadAsStringAsync();
+                var errorResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 _logger.LogError("Telegram API error: {StatusCode} {Response}", response.StatusCode, errorResponse);
                 return false;
             }
@@ -291,13 +315,19 @@ namespace NCM3.Services
             
             _logger.LogInformation("Setting up notification consolidation timer with interval of {Minutes} minutes", 
                 consolidationInterval);
+            
+            // Dispose existing timer if any    
+            if (_consolidationTimer != null)
+            {
+                _consolidationTimer.Stop();
+                _consolidationTimer.Dispose();
+            }
                 
             _consolidationTimer = new System.Timers.Timer(consolidationInterval * 60 * 1000); // Convert to milliseconds
-            _consolidationTimer.Elapsed += async (sender, e) => await ProcessConsolidatedNotificationsAsync();
+            _consolidationTimer.Elapsed += OnConsolidationTimerElapsed;
             _consolidationTimer.AutoReset = true;
             _consolidationTimer.Start();
-            
-            // Set up daily summary timer
+              // Set up daily summary timer
             bool dailySummaryEnabled = _configuration.GetValue<bool>("ChangeDetection:NotificationSettings:DailySummaryEnabled", true);
             
             if (dailySummaryEnabled)
@@ -310,6 +340,13 @@ namespace NCM3.Services
                 
                 _logger.LogInformation("Setting up daily summary timer for {Hour}:{Minute}", 
                     dailySummaryHour, dailySummaryMinute.ToString("00"));
+                
+                // Dispose existing timer if any
+                if (_dailySummaryTimer != null)
+                {
+                    _dailySummaryTimer.Stop();
+                    _dailySummaryTimer.Dispose();
+                }
                 
                 var now = DateTime.Now;
                 var summaryTime = new DateTime(now.Year, now.Month, now.Day, dailySummaryHour, dailySummaryMinute, 0);
@@ -324,16 +361,20 @@ namespace NCM3.Services
                     timeToNextSummary.Hours, timeToNextSummary.Minutes);
                     
                 _dailySummaryTimer = new System.Timers.Timer(timeToNextSummary.TotalMilliseconds);
-                _dailySummaryTimer.Elapsed += async (sender, e) => 
-                {
-                    await SendDailySummaryAsync();
-                    _dailySummaryTimer.Interval = 24 * 60 * 60 * 1000; // Set to 24 hours for subsequent runs
-                };
+                _dailySummaryTimer.Elapsed += OnDailySummaryTimerElapsed;
                 _dailySummaryTimer.AutoReset = true;
                 _dailySummaryTimer.Start();
             }
             else
             {
+                // Make sure the timer is disposed if it was previously created but now disabled
+                if (_dailySummaryTimer != null)
+                {
+                    _dailySummaryTimer.Stop();
+                    _dailySummaryTimer.Dispose();
+                    _dailySummaryTimer = null;
+                }
+                
                 _logger.LogInformation("Daily summary notifications are disabled");
             }
             
@@ -383,6 +424,12 @@ namespace NCM3.Services
         }
           public async Task SendConfigurationChangedEventAsync(ConfigurationChangedEvent configChangedEvent)
         {
+            if (configChangedEvent == null)
+            {
+                _logger.LogWarning("Received null configuration change event. Skipping notification.");
+                return;
+            }
+
             if (string.IsNullOrEmpty(_botToken) || string.IsNullOrEmpty(_chatId))
             {
                 _logger.LogWarning("Telegram không được cấu hình. Bỏ qua gửi thông báo.");
@@ -399,7 +446,7 @@ namespace NCM3.Services
                 
             if (sendImmediatelyFor.Any(p => string.Equals(p, configChangedEvent.Priority, StringComparison.OrdinalIgnoreCase)))
             {
-                await SendImmediateNotificationAsync(configChangedEvent);
+                await SendImmediateNotificationAsync(configChangedEvent).ConfigureAwait(false);
                 return;
             }
             
@@ -467,8 +514,7 @@ namespace NCM3.Services
             _logger.LogDebug("Added configuration change for router {RouterName} to pending notifications queue under key {RouterKey}", 
                 configChangedEvent.Router.Hostname, routerKey);
         }
-        
-        private async Task SendImmediateNotificationAsync(ConfigurationChangedEvent configChangedEvent)
+          private async Task SendImmediateNotificationAsync(ConfigurationChangedEvent configChangedEvent)
         {
             _logger.LogInformation("Sending immediate notification for high-priority change on router {RouterName}", 
                 configChangedEvent.Router.Hostname);
@@ -492,7 +538,7 @@ namespace NCM3.Services
                          $"*Description:* {configChangedEvent.ChangeDescription}\n\n" +
                          $"*Changes:*\n```\n{diffDetails}\n```";
                          
-            await SendTelegramMessageAsync(message);
+            await SendTelegramMessageAsync(message).ConfigureAwait(false);
             
             // Log notification
             if (_notificationLogger != null)
@@ -501,7 +547,7 @@ namespace NCM3.Services
                     configChangedEvent.Router.Hostname, 
                     "High Priority - " + configChangedEvent.ChangeDescription, 
                     diffDetails, 
-                    true);
+                    true).ConfigureAwait(false);
             }
         }
           private async Task ProcessConsolidatedNotificationsAsync()
@@ -521,8 +567,7 @@ namespace NCM3.Services
                 await ProcessConsolidatedNotificationsForKeyAsync(routerKey);
             }
         }
-        
-        private async Task ProcessConsolidatedNotificationsForKeyAsync(string routerKey)
+          private async Task ProcessConsolidatedNotificationsForKeyAsync(string routerKey)
         {
             if (!_pendingNotifications.TryGetValue(routerKey, out var events) || events.Count == 0)
             {
@@ -600,7 +645,7 @@ namespace NCM3.Services
                 message.AppendLine("```");
             }
             
-            await SendTelegramMessageAsync(message.ToString());
+            await SendTelegramMessageAsync(message.ToString()).ConfigureAwait(false);
             
             // Log consolidated notification
             if (_notificationLogger != null)
@@ -609,14 +654,14 @@ namespace NCM3.Services
                     routerKey, 
                     "Consolidated Changes", 
                     $"{events.Count} changes detected between {events.Min(e => e.Timestamp)} and {events.Max(e => e.Timestamp)}", 
-                    true);
+                    true).ConfigureAwait(false);
             }
             
             // Remove processed notifications
-            _pendingNotifications.TryRemove(routerKey, out _);
+            List<ConfigurationChangedEvent>? removedEvents;
+            _pendingNotifications.TryRemove(routerKey, out removedEvents);
         }
-        
-        public async Task SendDailySummaryAsync()
+          public async Task SendDailySummaryAsync()
         {
             _logger.LogInformation("Generating daily notification summary");
             
@@ -628,7 +673,11 @@ namespace NCM3.Services
             
             // Filter events from the last 24 hours
             var last24Hours = DateTime.UtcNow.AddDays(-1);
-            var recentEvents = _allEvents.Where(e => e.Timestamp >= last24Hours).ToList();
+            
+            // Thread-safe copy of events for processing
+            var recentEvents = _allEvents
+                .Where(e => e != null && e.Timestamp >= last24Hours)
+                .ToList();
             
             if (recentEvents.Count == 0)
             {
@@ -643,6 +692,7 @@ namespace NCM3.Services
             
             // Group by router
             var byRouter = recentEvents
+                .Where(e => e.Router != null)
                 .GroupBy(e => e.Router.Hostname)
                 .OrderBy(g => g.Key);
                 
@@ -651,8 +701,8 @@ namespace NCM3.Services
             
             // Group by priority
             var byPriority = recentEvents
-                .GroupBy(e => e.Priority)
-                .OrderBy(g => g.Key == "High" ? 0 : g.Key == "Medium" ? 1 : 2);
+                .GroupBy(e => e.Priority ?? "Unknown")
+                .OrderBy(g => g.Key == "High" ? 0 : g.Key == "Medium" ? 1 : g.Key == "Low" ? 2 : 3);
                 
             message.AppendLine("*Changes by priority:*");
             foreach (var priorityGroup in byPriority)
@@ -665,13 +715,13 @@ namespace NCM3.Services
             message.AppendLine();
             message.AppendLine("*Changes by router:*");
             
-            foreach (var routerGroup in byRouter)
+            foreach (var routerGroup in byRouter.Take(15)) // Limit to avoid message too long
             {
                 message.AppendLine($"• *{routerGroup.Key}:* {routerGroup.Count()} changes");
                 
                 // Group by detection strategy
                 var byStrategy = routerGroup
-                    .GroupBy(e => e.DetectionStrategy)
+                    .GroupBy(e => e.DetectionStrategy ?? "Unknown")
                     .OrderBy(g => g.Key);
                     
                 foreach (var strategyGroup in byStrategy)
@@ -680,7 +730,13 @@ namespace NCM3.Services
                 }
             }
             
-            await SendTelegramMessageAsync(message.ToString());
+            // If there are more routers than we displayed, add a note
+            if (byRouter.Count() > 15)
+            {
+                message.AppendLine($"\n*Note:* {byRouter.Count() - 15} more routers not shown.");
+            }
+            
+            await SendTelegramMessageAsync(message.ToString()).ConfigureAwait(false);
             
             // Log daily summary
             if (_notificationLogger != null)
@@ -689,7 +745,7 @@ namespace NCM3.Services
                     "All Routers", 
                     "Daily Summary", 
                     $"{recentEvents.Count} changes across {byRouter.Count()} routers in the last 24 hours", 
-                    true);
+                    true).ConfigureAwait(false);
             }
         }          private string GetDiffSummary(string oldContent, string newContent, int maxLines)
         {
@@ -951,14 +1007,278 @@ namespace NCM3.Services
 
             return result.ToString();
         }
-        
+          // Flag to track whether Dispose has been called
+        private bool _disposed = false;
+
         public void Dispose()
         {
-            _consolidationTimer?.Stop();
-            _consolidationTimer?.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+                
+            if (disposing)
+            {
+                // Dispose managed resources
+                if (_consolidationTimer != null)
+                {
+                    _consolidationTimer.Elapsed -= OnConsolidationTimerElapsed;
+                    _consolidationTimer.Stop();
+                    _consolidationTimer.Dispose();
+                    _consolidationTimer = null;
+                }
+                
+                if (_dailySummaryTimer != null)
+                {
+                    _dailySummaryTimer.Elapsed -= OnDailySummaryTimerElapsed;
+                    _dailySummaryTimer.Stop();
+                    _dailySummaryTimer.Dispose();
+                    _dailySummaryTimer = null;
+                }
+                
+                // Clear collections
+                _pendingNotifications.Clear();
+            }
             
-            _dailySummaryTimer?.Stop();
-            _dailySummaryTimer?.Dispose();
+            _disposed = true;
+        }
+        
+        // Finalizer
+        ~TelegramNotificationService()
+        {
+            Dispose(false);
+        }
+
+        private async void OnConsolidationTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            try
+            {
+                await ProcessConsolidatedNotificationsAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing consolidated notifications: {Message}", ex.Message);
+            }
+        }
+          private async void OnDailySummaryTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            try
+            {
+                await SendDailySummaryAsync().ConfigureAwait(false);
+                
+                // Readjust timer for next 24 hours
+                if (_dailySummaryTimer != null)
+                {
+                    _dailySummaryTimer.Interval = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending daily summary: {Message}", ex.Message);
+            }
+        }        public async Task<bool> SendTestMessageAsync()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_botToken) || string.IsNullOrEmpty(_chatId))
+                {
+                    _logger.LogWarning("Telegram không được cấu hình. Bỏ qua gửi thông báo kiểm tra.");
+                    
+                    // Ghi log thông báo
+                    if (_notificationLogger != null)
+                    {
+                        await _notificationLogger.LogConfigurationChangeNotificationAsync(
+                            "Kiểm tra kết nối", 
+                            "Thử nghiệm", 
+                            "Bỏ qua do Telegram chưa được cấu hình", 
+                            false).ConfigureAwait(false);
+                    }
+                    
+                    return false; // Telegram is not configured
+                }
+                
+                // Thu thập thông tin hệ thống và cấu hình
+                string proxyStatus = _useProxy && !string.IsNullOrEmpty(_proxyApiUrl) 
+                    ? $"*Proxy:* Bật ({_proxyApiUrl})"
+                    : "*Proxy:* Tắt (kết nối trực tiếp)";
+                
+                string parseMode = _configuration.GetValue<string>("Telegram:NotificationFormat", "MarkdownV2") ?? "MarkdownV2";
+                bool enableMarkdown = _configuration.GetValue<bool>("Telegram:EnableMarkdownFormatting", true);
+                string appVersion = typeof(TelegramNotificationService).Assembly.GetName().Version?.ToString() ?? "Unknown";
+                
+                // Lấy thông tin thêm về hệ thống
+                string osInfo = Environment.OSVersion.ToString();
+                string dotnetInfo = Environment.Version.ToString();
+                
+                // Tạo tin nhắn kiểm tra với thông tin chi tiết hơn
+                var message = $"✅ *Kiểm tra kết nối Telegram*\n\n" +
+                             $"*Thời gian:* {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
+                             $"*Định dạng:* {parseMode}\n" +
+                             $"{proxyStatus}\n\n" +
+                             $"*Thông tin hệ thống:*\n" +
+                             $"NCM3 phiên bản: {appVersion}\n" +
+                             $"OS: {osInfo}\n" +
+                             $".NET: {dotnetInfo}\n\n" +
+                             $"*Thông báo:* Kết nối đến Telegram hoạt động bình thường.\n\n" +
+                             $"Nếu bạn nhìn thấy thông báo này, NCM3 đã kết nối thành công đến bot Telegram.";
+                
+                // Thử với số lần thử lại nếu gặp lỗi
+                int maxRetries = 2; // Thử tối đa 3 lần (lần đầu + 2 lần thử lại)
+                int currentTry = 0;
+                bool success = false;
+                Exception? lastException = null;
+                
+                while (currentTry <= maxRetries && !success)
+                {
+                    try
+                    {
+                        if (currentTry > 0)
+                        {
+                            _logger.LogInformation("Đang thử lại kết nối Telegram (lần {RetryCount})...", currentTry);
+                            message += $"\n\n(Thử lại lần {currentTry})";
+                            
+                            // Đợi một chút trước khi thử lại với thời gian tăng dần
+                            await Task.Delay(1000 * currentTry * 2).ConfigureAwait(false);
+                        }
+                        
+                        success = await SendTelegramMessageAsync(message).ConfigureAwait(false);
+                        
+                        if (success)
+                            break;
+                    }
+                    catch (Exception ex)
+                    {
+                        lastException = ex;
+                        _logger.LogWarning(ex, "Lỗi khi gửi tin nhắn kiểm tra (lần thử {RetryCount}): {Message}", 
+                            currentTry, ex.Message);
+                    }
+                    
+                    currentTry++;
+                }
+                
+                // Thu thập thông tin chi tiết về kết nối
+                string connectionDetails = success 
+                    ? "Kết nối thành công" 
+                    : $"Không thể kết nối sau {currentTry + 1} lần thử";
+                    
+                if (lastException != null)
+                {
+                    connectionDetails += $" - Lỗi: {lastException.Message}";
+                    
+                    // Kiểm tra các loại lỗi phổ biến và đề xuất giải pháp
+                    if (lastException is HttpRequestException httpEx)
+                    {
+                        if (httpEx.Message.Contains("Forbidden") || httpEx.Message.Contains("403"))
+                            connectionDetails += " - Bot Token có thể không hợp lệ hoặc bot đã bị vô hiệu hóa.";
+                        else if (httpEx.Message.Contains("Not Found") || httpEx.Message.Contains("404"))
+                            connectionDetails += " - API Telegram không tìm thấy. Bot Token có thể không đúng.";
+                        else if (httpEx.Message.Contains("Bad Request") || httpEx.Message.Contains("400"))
+                            connectionDetails += " - Chat ID có thể không chính xác hoặc bot không có quyền gửi tin nhắn đến chat này.";
+                        else if (httpEx.Message.Contains("Timeout") || httpEx.Message.Contains("timed out"))
+                            connectionDetails += " - Kết nối tới Telegram bị timeout. Kiểm tra cấu hình mạng và proxy.";
+                    }
+                }
+                
+                // Ghi log kết quả
+                if (success)
+                {
+                    _logger.LogInformation("Kết nối Telegram thành công{RetryInfo}",
+                        currentTry > 0 ? $" sau {currentTry} lần thử lại" : "");
+                }
+                else
+                {
+                    _logger.LogError(lastException, "Kiểm tra kết nối Telegram thất bại sau {RetryCount} lần thử",
+                        currentTry);
+                }
+                
+                // Ghi log thông báo
+                if (_notificationLogger != null)
+                {
+                    await _notificationLogger.LogConfigurationChangeNotificationAsync(
+                        "Kiểm tra kết nối", 
+                        "Thử nghiệm", 
+                        $"Kiểm tra kết nối Telegram: {connectionDetails}", 
+                        success).ConfigureAwait(false);
+                }
+                
+                return success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi tin nhắn kiểm tra đến Telegram: {Message}", ex.Message);
+                
+                // Ghi log thông báo lỗi
+                if (_notificationLogger != null)
+                {
+                    await _notificationLogger.LogConfigurationChangeNotificationAsync(
+                        "Kiểm tra kết nối", 
+                        "Thử nghiệm", 
+                        $"Lỗi không xác định: {ex.Message}", 
+                        false).ConfigureAwait(false);
+                }
+                
+                return false;
+            }
+        }
+
+        public async Task SendRouterAddedNotificationAsync(string routerName, string ipAddress, string model, string osVersion)
+        {
+            if (string.IsNullOrEmpty(_botToken) || string.IsNullOrEmpty(_chatId))
+            {
+                _logger.LogWarning("Telegram không được cấu hình. Bỏ qua gửi thông báo.");
+                
+                // Ghi log thông báo
+                if (_notificationLogger != null)
+                {
+                    await _notificationLogger.LogConfigurationChangeNotificationAsync(
+                        routerName, 
+                        "Thêm router mới", 
+                        "Bỏ qua do Telegram chưa được cấu hình", 
+                        false).ConfigureAwait(false);
+                }
+                
+                return; // Skip if Telegram is not configured
+            }
+
+            var message = $"🆕 *Thêm Router Mới*\n\n" +
+                         $"*Tên Router:* {routerName}\n" +
+                         $"*Địa chỉ IP:* {ipAddress}\n" +
+                         $"*Model:* {model}\n" +
+                         $"*Phiên bản OS:* {osVersion}\n" +
+                         $"*Thời gian:* {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+
+            try
+            {
+                bool success = await SendTelegramMessageAsync(message).ConfigureAwait(false);
+                
+                // Ghi log thông báo
+                if (_notificationLogger != null)
+                {
+                    await _notificationLogger.LogConfigurationChangeNotificationAsync(
+                        routerName, 
+                        "Thêm router mới", 
+                        "Thông báo gửi thành công", 
+                        true).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi thông báo Telegram về router mới {RouterName}: {Message}", routerName, ex.Message);
+                
+                // Ghi log thông báo
+                if (_notificationLogger != null)
+                {
+                    await _notificationLogger.LogConfigurationChangeNotificationAsync(
+                        routerName, 
+                        "Thêm router mới", 
+                        $"Lỗi khi gửi thông báo: {ex.Message}", 
+                        false).ConfigureAwait(false);
+                }
+            }
         }
     }
 }
