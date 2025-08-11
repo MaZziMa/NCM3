@@ -38,15 +38,27 @@ namespace NCM3.Services
                 try
                 {
                     var connectTask = tcpClient.ConnectAsync(router.IpAddress, DefaultSettings.SSHPort);
+
+                    // Wait for either the connection to complete or the timeout to elapse
                     if (await Task.WhenAny(connectTask, Task.Delay(3000)) == connectTask)
                     {
-                        _logger.LogInformation("Kết nối đến router {RouterName} ({IP}) thành công", 
+                        // Ensure any connection exceptions are observed and propagated
+                        await connectTask.ConfigureAwait(false);
+
+                        if (tcpClient.Connected)
+                        {
+                            _logger.LogInformation("Kết nối đến router {RouterName} ({IP}) thành công",
+                                router.Hostname, router.IpAddress);
+                            return true;
+                        }
+
+                        _logger.LogWarning("Không thể kết nối đến router {RouterName} ({IP})",
                             router.Hostname, router.IpAddress);
-                        return true;
+                        return false;
                     }
                     else
                     {
-                        _logger.LogWarning("Hết thời gian chờ kết nối đến router {RouterName} ({IP})", 
+                        _logger.LogWarning("Hết thời gian chờ kết nối đến router {RouterName} ({IP})",
                             router.Hostname, router.IpAddress);
                         return false;
                     }
